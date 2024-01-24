@@ -144,16 +144,17 @@ sub worker {
 	while (my $seq = $process_q -> dequeue()){
 		chomp $seq;
 		$seq =~ s/\s+//;
-		print localtime() ." CPU".threads -> self() -> tid().": running on $seq\n";
-		`timeout ${timeout}s ${genometools}gt suffixerator -db $seq -indexname $seq -tis -suf -lcp -des -ssp -sds -dna 2>/dev/null`;
-		`timeout ${timeout}s ${genometools}gt ltrharvest -index $seq $harvest_para > $seq.harvest.scn 2>/dev/null`;
-		 if ($? ne 0 and $try1 ne 0){
+		#print localtime() ." CPU".threads -> self() -> tid().": running on $seq\n";
+		my $gtcmd = "timeout ${timeout}s ${genometools}gt suffixerator -db $seq -indexname $seq -tis -suf -lcp -des -ssp -sds -dna; timeout ${timeout}s ${genometools}gt ltrharvest -index $seq $harvest_para > $seq.harvest.scn";
+		my $err = system($gtcmd);
+
+		 if ($err ne 0 and $try1 ne 0){
 			print localtime() ." CPU".threads -> self() -> tid().": $seq timeout, process it with the salvage mode\n";
 			my $in=`perl $script_path/LTR_HARVEST_parallel -seq $seq -size 50000 -time 30 -try1 0 -threads 1 -cut $cut -gt $genometools`;
 			`mv $seq.harvest.combine.scn $seq.harvest.scn`;
 			`rm -rf ./${seq}.harvest 2>/dev/null`; #remove?
 			}
-		`rm $seq.des $seq.esq $seq.lcp $seq.llv $seq.md5 $seq.prj $seq.sds $seq.ssp $seq.suf 2>/dev/null`;
+		system("rm $seq.des $seq.esq $seq.lcp $seq.llv $seq.md5 $seq.prj $seq.sds $seq.ssp $seq.suf 2>/dev/null");
 		}
 	}
 
@@ -164,7 +165,7 @@ $process_q -> end(); #stop adding items to the queue
 close List;
 
 #work and finish
-for (1..$threads){
+for (0..$threads){
 	threads -> create ( \&worker );
 	}
 foreach my $thr (threads -> list()){
