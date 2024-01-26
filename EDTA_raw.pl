@@ -358,7 +358,9 @@ if ($overwrite eq 0 and -s "$genome.LTRlib.fa"){
 	print STDERR "$date\tExisting LTR_retriever result $genome.LTRlib.fa found!\n\t\t\t\tWill use this for further analyses.\n\n";
 	} else {
 	`cat $genome.harvest.combine.scn $genome.finder.combine.scn > $genome.rawLTR.scn`;
-	`${LTR_retriever}LTR_retriever -genome $genome -inharvest $genome.rawLTR.scn -u $miu -threads $threads -noanno -trf_path $trf -blastplus $blastplus -repeatmasker $repeatmasker`;
+	`${LTR_retriever}LTR_retriever -genome $genome -inharvest $genome.rawLTR.scn 
+	-u $miu -threads $threads 
+	-noanno -trf_path $trf -blastplus $blastplus -repeatmasker $repeatmasker`;
 	}
 
 # get full-length LTR from pass.list
@@ -369,7 +371,10 @@ if ($overwrite eq 0 and -s "$genome.LTRlib.fa"){
 
 # remove simple repeats and candidates with simple repeats at terminals
 `${mdust}mdust $genome.LTR.intact.fa.ori > $genome.LTR.intact.fa.ori.dusted`;
-`perl $cleanup_tandem -misschar N -nc 50000 -nr 0.9 -minlen 100 -minscore 3000 -trf 1 -trf_path $trf -cleanN 1 -cleanT 1 -f $genome.LTR.intact.fa.ori.dusted > $genome.LTR.intact.fa.ori.dusted.cln`;
+`perl $cleanup_tandem -misschar N -nc 50000 
+-nr 0.9 -minlen 100 -minscore 3000 -trf 1 -trf_path $trf 
+-cleanN 1 -cleanT 1 -f $genome.LTR.intact.fa.ori.dusted > 
+$genome.LTR.intact.fa.ori.dusted.cln`;
 
 # annotate and remove not LTR candidates
 `${TEsorter}TEsorter $genome.LTR.intact.fa.ori.dusted.cln --disable-pass2 -p $threads 2>/dev/null`;
