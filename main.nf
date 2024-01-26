@@ -35,6 +35,7 @@ if ($threads !~ /^[0-9]+$/){ die "The expected value for the threads parameter i
 // TODO: Check exclude file
 
 // Rename FASTA headers (just makes everything easier later)
+// TODO: Put fffx on bioconda or somewhere so it just runs, otherwise tiny container
 process sanitize {
     input:
         path x
@@ -88,6 +89,7 @@ perl ${projectDir}/bin/LTR_FINDER_parallel/LTR_FINDER_parallel \
 // !{genome.baseName}.LTR.intact.gff3 // seems to be optional
 // !{genome.baseName}.LTR.intact.raw.fa.anno.list
 
+// TODO: Perl and awk get a bit ugly in nextflow, move to a proper external script
 process ltr_retriever {
     input:
         path(genome)
