@@ -31,15 +31,10 @@ if ($threads !~ /^[0-9]+$/){ die "The expected value for the threads parameter i
 
 */
 
-// TODO: Validate and rename FASTA headers
-// Max len of 13
-
 // TODO: Check inputed repeat libraries, CDS, etc...
 // TODO: Check exclude file
 
-// TODO: LTR_retriever
-// see: EDTRA_raw.pl line 323
-
+// Rename FASTA headers (just makes everything easier later)
 process sanitize {
     input:
         path x
@@ -355,10 +350,10 @@ perl ${projectDir}/util/bed2gff.pl ${genome.baseName}.Helitron.intact.raw.bed HE
 """
 }
 
-
 workflow {
     genomes = channel.fromPath(params.genomes + "/*")
     sanitize(genomes)
+ 
     // Get first element of each tuple
     sanitized_genomes = sanitize.out.map({ it[0] })
 
