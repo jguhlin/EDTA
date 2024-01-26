@@ -99,11 +99,6 @@ if ( ! $seq_path and (! $check_dependencies) ){
 print "Pass!\n";
 exit if $check_dependencies;
 
-# make a softlink to the genome file
-my $seq_file = basename($seq_path);
-`ln -s $seq_path $seq_file` unless -s $seq_file;
-
-
 if ($threads == 1){
 # run the original single threaded code
 `${ltr_finder}ltr_finder $finder_para $seq_file > $seq_file.finder.scn`;
