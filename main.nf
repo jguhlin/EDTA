@@ -236,11 +236,11 @@ python3 ${projectDir}/bin/TIR-Learner3.0/TIR-Learner3.0.py \
     -l ${params.maxint} \
     -o ${genome.baseName}.TIR
 
-perl ${projectDir}/utils/rename_tirlearner.pl \
+perl ${projectDir}/util/rename_tirlearner.pl \
     ./TIR-Learner-Result/TIR-Learner_FinalAnn.fa | perl -nle 's/TIR-Learner_//g; print \$_' > ${genome.baseName}.TIR
 
-perl ${projectDir}/utils/getext_seq ${genome} ${genome.baseName}.TIR
-perl ${projectDir}/utils/flanking_filter.pl \
+perl ${projectDir}/util/getext_seq ${genome} ${genome.baseName}.TIR
+perl ${projectDir}/util/flanking_filter.pl \
     -genome ${genome} \
     -query ${genome.baseName}.TIR.ext30.fa \
     -miniden 90 \
@@ -248,7 +248,7 @@ perl ${projectDir}/utils/flanking_filter.pl \
     -maxct 20 \
     -t ${task.cpus} \
 
-perl ${projectDir}/utils/output_by_list.pl 1 \
+perl ${projectDir}/util/output_by_list.pl 1 \
     ${genome.baseName}.TIR \
     1 \
     ${genome.baseName}.TIR.ext30.fa.pass.fa \
@@ -277,7 +277,7 @@ cp ${genome.baseName}.TIR.ext30.fa.pass.fa.dusted.cln.cln.list ${genome.baseName
 
 # get gff3 of intact TIR elements
 perl -nle 's/\\\\-\\\\+\\\\-/_Len:/; my (\$chr, \$method, \$supfam, \$s, \$e, \$anno) = (split)[0,1,2,3,4,8]; my \$class=\"DNA\"; \$class=\"MITE\" if \$e-\$s+1 <= 600; my (\$tir, \$iden, \$tsd)=(\$1, \$2/100, \$3) if \$anno=~/TIR:(.*)_([0-9.]+)_TSD:([a-z0-9._]+)_LEN/i; print \"\$chr \$s \$e \$chr:\$s..\$e \$class/\$supfam structural \$iden . . . TSD=\$tsd;TIR=\$tir\"' ./TIR-Learner-Result/TIR-Learner_FinalAnn.gff3 |\
-    perl ${projectDir}/utils/output_by_list.pl 1 4 - 1 \
+    perl ${projectDir}/util/output_by_list.pl 1 4 - 1 \
     ${genome.baseName}.TIR.intact.raw.fa -MSU0 -MSU1 \
     > ${genome.baseName}.TIR.intact.raw.bed
 
@@ -299,7 +299,7 @@ sh ${projectDir}/util/run_helitron_scanner.sh \
     ${genome} \
     ${task.cpus}
 
-perl ${projectDir}/utils/format_helitronscanner_out.pl \
+perl ${projectDir}/util/format_helitronscanner_out.pl \
     -genome $genome \
     -sitefilter 1 \
     -minscore 12 \
@@ -307,7 +307,9 @@ perl ${projectDir}/utils/format_helitronscanner_out.pl \
     -extlen 30 \
     -extout 1
 
-perl ${projectDir}/utils/flanking_filter.pl \
+mv ${genome.baseName}.HelitronScanner.filtered.ext.fa ${genome}.HelitronScanner.filtered.ext.fa
+
+perl ${projectDir}/util/flanking_filter.pl \
     -genome ${genome} \
     -query ${genome.baseName}.HelitronScanner.filtered.ext.fa \
     -miniden 90 \
@@ -316,14 +318,14 @@ perl ${projectDir}/utils/flanking_filter.pl \
     -t ${task.cpus}
 
 # remove simple repeats and candidates with simple repeats at terminals
-perl ${projectDir}/utils/output_by_list.pl 1 \
+perl ${projectDir}/util/output_by_list.pl 1 \
     ${genome.baseName}.HelitronScanner.filtered.fa \
     1 \
     ${genome.baseName}.HelitronScanner.filtered.ext.fa \
     -FA > ${genome.baseName}.HelitronScanner.filtered.fa.ext.fa
 
 mdust ${genome.baseName}.HelitronScanner.filtered.fa.pass.fa > ${genome.baseName}.HelitronScanner.filtered.fa.pass.fa.dusted
-perl ${projectDir}/utils/cleanup_tandem.pl \
+perl ${projectDir}/util/cleanup_tandem.pl \
     -misschar N \
     -nc 50000 \
     -nr 0.9 \
