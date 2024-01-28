@@ -236,6 +236,8 @@ python3 ${projectDir}/bin/TIR-Learner3.0/TIR-Learner3.0.py \
     -l ${params.maxint} \
     -o ${genome.baseName}.TIR
 
+cd ${genome.baseName}.TIR
+
 perl ${projectDir}/util/rename_tirlearner.pl \
     ./TIR-Learner-Result/TIR-Learner_FinalAnn.fa | perl -nle 's/TIR-Learner_//g; print \$_' > ${genome.baseName}.TIR
 
@@ -291,7 +293,7 @@ process helitron_scanner {
         path(genome)
     output:
         path("${genome.baseName}.Helitron.intact.raw.gff3")
-    conda 'bioconda::tesorter'
+    conda 'bioconda::tesorter bioconda::mdust'
     cpus 4
 
 """
@@ -307,11 +309,9 @@ perl ${projectDir}/util/format_helitronscanner_out.pl \
     -extlen 30 \
     -extout 1
 
-mv ${genome.baseName}.HelitronScanner.filtered.ext.fa ${genome}.HelitronScanner.filtered.ext.fa
-
 perl ${projectDir}/util/flanking_filter.pl \
     -genome ${genome} \
-    -query ${genome.baseName}.HelitronScanner.filtered.ext.fa \
+    -query ${genome}.HelitronScanner.filtered.ext.fa \
     -miniden 90 \
     -mincov 0.9 \
     -maxct 5 \
@@ -319,12 +319,12 @@ perl ${projectDir}/util/flanking_filter.pl \
 
 # remove simple repeats and candidates with simple repeats at terminals
 perl ${projectDir}/util/output_by_list.pl 1 \
-    ${genome.baseName}.HelitronScanner.filtered.fa \
+    ${genome}.HelitronScanner.filtered.fa \
     1 \
-    ${genome.baseName}.HelitronScanner.filtered.ext.fa \
-    -FA > ${genome.baseName}.HelitronScanner.filtered.fa.ext.fa
+    ${genome}.HelitronScanner.filtered.ext.fa \
+    -FA > ${genome}.HelitronScanner.filtered.fa.ext.fa
 
-mdust ${genome.baseName}.HelitronScanner.filtered.fa.pass.fa > ${genome.baseName}.HelitronScanner.filtered.fa.pass.fa.dusted
+mdust ${genome}.HelitronScanner.filtered.fa.pass.fa > ${genome}.HelitronScanner.filtered.fa.pass.fa.dusted
 perl ${projectDir}/util/cleanup_tandem.pl \
     -misschar N \
     -nc 50000 \
@@ -334,18 +334,18 @@ perl ${projectDir}/util/cleanup_tandem.pl \
     -trf 1 \
     -cleanN 1 \
     -cleanT 1 \
-    -f ${genome.baseName}.HelitronScanner.filtered.fa.pass.fa.dusted > ${genome.baseName}.HelitronScanner.filtered.fa.pass.fa.dusted.cln \
-    | perl -nle 's/^(>.*)\\\\s+(.*)\\\$/\\\$1#DNA\\/Helitron\\t\\\$2/; print \\\$_' > ${genome.baseName}.HelitronScanner.filtered.fa.pass.fa.dusted.cln
+    -f ${genome}.HelitronScanner.filtered.fa.pass.fa.dusted > ${genome}.HelitronScanner.filtered.fa.pass.fa.dusted.cln \
+    | perl -nle 's/^(>.*)\\\\s+(.*)\\\$/\\\$1#DNA\\/Helitron\\t\\\$2/; print \\\$_' > ${genome}.HelitronScanner.filtered.fa.pass.fa.dusted.cln
 
 # annotate and remove non-Helitron candidates
-TEsorter ${genome.baseName}.HelitronScanner.filtered.fa.pass.fa.dusted.cln \
+TEsorter ${genome}.HelitronScanner.filtered.fa.pass.fa.dusted.cln \
     --disable-pass2 \
     -p ${task.cpus}
 
 perl ${projectDir}/cleanup_missclas.pl \
-    ${genome.baseName}.HelitronScanner.filtered.fa.pass.fa.dusted.cln.rexdb.cls.tsv
-mv ${genome.baseName}.HelitronScanner.filtered.fa.pass.fa.dusted.cln.cln ${genome.baseName}.Helitron.intact.raw.fa
-cp ${genome.baseName}.HelitronScanner.filtered.fa.pass.fa.dusted.cln.cln.list ${genome.baseName}.Helitron.intact.raw.fa.anno.list
+    ${genome}.HelitronScanner.filtered.fa.pass.fa.dusted.cln.rexdb.cls.tsv
+mv ${genome}.HelitronScanner.filtered.fa.pass.fa.dusted.cln.cln ${genome.baseName}.Helitron.intact.raw.fa
+cp ${genome}.HelitronScanner.filtered.fa.pass.fa.dusted.cln.cln.list ${genome.baseName}.Helitron.intact.raw.fa.anno.list
 
 # get intact Helitrons and gff3
 perl ${projectDir}/util/make_bed_with_intact.pl \
