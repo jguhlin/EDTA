@@ -37,6 +37,7 @@ if ($threads !~ /^[0-9]+$/){ die "The expected value for the threads parameter i
 // Rename FASTA headers (just makes everything easier later)
 // TODO: Put fffx on bioconda or somewhere so it just runs, otherwise tiny container
 process sanitize {
+    tag "${x.baseName}"
     input:
         path x
     output:
@@ -50,12 +51,14 @@ fffx sanitize ${x} ${x.baseName}_sanitized
 
 // TODO: Rustize LTR_HARVEST_parallel
 process ltr_harvest {
+    tag "${genome.baseName}"
     input:
         path(genome)
     output:
         path("${genome}.harvest.combine.scn")
     conda 'bioconda::genometools-genometools'
     cpus 8
+    publishDir 'out_ltr_harvest'
 """
 perl ${projectDir}/bin/LTR_HARVEST_parallel/LTR_HARVEST_parallel \
     -seq ${genome} \
@@ -67,11 +70,13 @@ perl ${projectDir}/bin/LTR_HARVEST_parallel/LTR_HARVEST_parallel \
 
 // TODO: Rustize LTR_FINDER_parallel
 process ltr_finder {
+    tag "${genome.baseName}"
     input:
         path(genome)
     output:
         path("${genome}.finder.combine.scn")
     cpus 8
+    publishDir 'out_ltr_finder'
 """
 perl ${projectDir}/bin/LTR_FINDER_parallel/LTR_FINDER_parallel \
     -seq ${genome} \
@@ -91,6 +96,7 @@ perl ${projectDir}/bin/LTR_FINDER_parallel/LTR_FINDER_parallel \
 
 // TODO: Perl and awk get a bit ugly in nextflow, move to a proper external script
 process ltr_retriever {
+    tag "${genome.baseName}"
     input:
         path(genome)
         path(harvest)
@@ -99,6 +105,7 @@ process ltr_retriever {
         tuple path("${genome.baseName}.LTR.intact.raw.fa", optional: true), path("${genome.baseName}.LTRlib.fa", optional: true), path("${genome.baseName}.LTR.intact.raw.fa.anno.list", optional: true)
     conda 'bioconda::ltr_retriever bioconda::repeatmasker bioconda::trf bioconda::mdust bioconda::tesorter'
     cpus 8
+    publishDir 'out_ltr_retriever'
 shell:
 '''
 touch !{genome}.pass.list
@@ -155,19 +162,19 @@ touch !{genome.baseName}.LTR.intact.raw.fa.anno.list
 }
 
 process annosine {
+    tag "${genome.baseName}"
     input:
         path(genome)
     output:
         path("${genome.baseName}.SINE.raw.fa")
-    conda 'bioconda::annosine2 bioconda::tesorter biopython'
+    conda 'python=3.9 bioconda::annosine2 bioconda::tesorter biopython'
     cpus 16
+    publishDir 'out_annosine'
 
 shell:
 '''
 
 touch Seed_SINE.fa
-
-python !{projectDir}/bin/SINEFinder.py !{genome}
 
 AnnoSINE_v2 -t !{task.cpus} \
   -a 2 \
@@ -177,31 +184,37 @@ AnnoSINE_v2 -t !{task.cpus} \
   --shift 100 \
   -auto 1 3 !{genome} .
 
-  awk '{print \$1}' Seed_SINE.fa > !{genome.baseName}.AnnoSINE.raw.fa
-  TEsorter !{genome.baseName}.AnnoSINE.raw.fa --disable-pass2 -p !{task.cpus}
-  touch !{genome.baseName}.AnnoSINE.raw.fa.rexdb.cls.tsv
-  perl !{projectDir}/util/cleanup_misclas.pl !{genome.baseName}.AnnoSINE.raw.fa.rexdb.cls.tsv
+  if [ -s "Seed_SINE.fa" ]; then
+    awk '{print \$1}' Seed_SINE.fa > !{genome.baseName}.AnnoSINE.raw.fa
+    TEsorter !{genome.baseName}.AnnoSINE.raw.fa --disable-pass2 -p !{task.cpus}
+    touch !{genome.baseName}.AnnoSINE.raw.fa.rexdb.cls.tsv
+    perl !{projectDir}/util/cleanup_misclas.pl !{genome.baseName}.AnnoSINE.raw.fa.rexdb.cls.tsv
 
-  perl !{projectDir}/util/cleanup_tandem.pl -misschar N \
-    -nc 50000 \
-    -nr 0.9 \
-    -minlen 100 \
-    -minscore 3000 \
-    -trf 1 \
-    -cleanN 1 \
-    -cleanT 1 \
-    -f !{genome.baseName}.AnnoSINE.raw.fa.cln > !{genome.baseName}.SINE.raw.fa
+    perl !{projectDir}/util/cleanup_tandem.pl -misschar N \
+        -nc 50000 \
+        -nr 0.9 \
+        -minlen 100 \
+        -minscore 3000 \
+        -trf 1 \
+        -cleanN 1 \
+        -cleanT 1 \
+        -f !{genome.baseName}.AnnoSINE.raw.fa.cln > !{genome.baseName}.SINE.raw.fa
+    else
+        touch !{genome.baseName}.SINE.raw.fa
+    fi
 
 '''
 }
 
 process repeatmodeler {
+    tag "${genome.baseName}"
     input:
         path(genome)
     output:
         tuple path("${genome.baseName}.LINE.raw.fa"), path("${genome.baseName}.RM2.fa"), path("${genome.baseName}.RM2.raw.fa")
     conda 'bioconda::repeatmodeler bioconda::tesorter'
     cpus 32
+    publishDir 'out_repeatmodeler'
 
 shell:
 '''
@@ -213,7 +226,7 @@ TEsorter !{genome.baseName}.RM2.raw.fa --disable-pass2 -p !{task.cpus}
 
 perl !{projectDir}/util/cleanup_misclas.pl !{genome.baseName}.RM2.raw.fa.rexdb.cls.tsv
 
-TESorter !{genome.baseName}.RM2.raw.fa.cln --disable-pass2 -p !{task.cpus}
+TEsorter !{genome.baseName}.RM2.raw.fa.cln --disable-pass2 -p !{task.cpus}
 perl -nle 's/>\\S+\\s+/>/; print \$_' !{genome.baseName}.RM2.raw.fa.cln.rexdb.cls.lib > !{genome.baseName}.RM2.raw.fa.cln
 
 perl !{projectDir}/util/cleanup_tandem.pl -misschar N \
@@ -232,12 +245,14 @@ grep -P 'LINE|SINE' !{genome.baseName}.RM2.raw.fa.cln2 | perl !{projectDir}/util
 }
 
 process tir_learner {
+    tag "${genome.baseName}"
     input:
         path(genome)
     output:
-        tuple path("${genome.baseName}.intact.fa"), path("${genome.baseName}.intact.raw.fa"), path("${genome.baseName}.intact.raw.gff3")
+        tuple path("${genome.baseName}.TIR.intact.fa"), path("${genome.baseName}.TIR.intact.raw.fa"), path("${genome.baseName}.TIR.intact.raw.gff3")
     cpus 16
-    conda 'bioconda::genometools-genometools bioconda::genericrepeatfinder bioconda::cd-hit bioconda::mdust bioconda::tesorter blast pandas swifter regex scikit-learn tensorflow=2.11.0=cuda112py39h01bd6f0_0'
+    conda 'python=3.9 bioconda::genometools-genometools bioconda::genericrepeatfinder bioconda::cd-hit bioconda::mdust bioconda::tesorter blast pandas swifter regex scikit-learn tensorflow=2.11.0=cuda112py39h01bd6f0_0 bioconda::trf'
+    publishDir 'out_tir_learner'
 
 """
 python3 ${projectDir}/bin/TIR-Learner3.0/TIR-Learner3.0.py \
@@ -252,9 +267,9 @@ cd ${genome.baseName}.TIR
 perl ${projectDir}/util/rename_tirlearner.pl \
     ./TIR-Learner-Result/TIR-Learner_FinalAnn.fa | perl -nle 's/TIR-Learner_//g; print \$_' > ${genome.baseName}.TIR
 
-perl ${projectDir}/util/getext_seq ${genome} ${genome.baseName}.TIR
+perl ${projectDir}/util/get_ext_seq.pl ../${genome} ${genome.baseName}.TIR
 perl ${projectDir}/util/flanking_filter.pl \
-    -genome ${genome} \
+    -genome ../${genome} \
     -query ${genome.baseName}.TIR.ext30.fa \
     -miniden 90 \
     -mincov 0.9 \
@@ -270,7 +285,7 @@ perl ${projectDir}/util/output_by_list.pl 1 \
 
 # remove simple repeats and candidates with simple repeats at terminals
 mdust ${genome.baseName}.TIR.ext30.fa.pass.fa.ori > ${genome.baseName}.TIR.ext30.fa.pass.fa.dusted
-perl ${projectDir}/cleanup_tandem.pl \
+perl ${projectDir}/util/cleanup_tandem.pl \
     -misschar N \
     -nc 50000 \
     -nr 0.9 \
@@ -285,27 +300,29 @@ perl ${projectDir}/cleanup_tandem.pl \
 TEsorter ${genome.baseName}.TIR.ext30.fa.pass.fa.dusted.cln --disable-pass2 -p ${task.cpus}
 perl ${projectDir}/util/cleanup_misclas.pl \
     ${genome.baseName}.TIR.ext30.fa.pass.fa.dusted.cln.rexdb.cls.tsv
-mv ${genome.baseName}.TIR.ext30.fa.pass.fa.dusted.cln.cln ${genome.baseName}.TIR.intact.raw.fa
-cp ${genome.baseName}.TIR.ext30.fa.pass.fa.dusted.cln.cln.list ${genome.baseName}.TIR.intact.raw.fa.anno.list
+mv ${genome.baseName}.TIR.ext30.fa.pass.fa.dusted.cln.cln ../${genome.baseName}.TIR.intact.raw.fa
+cp ${genome.baseName}.TIR.ext30.fa.pass.fa.dusted.cln.cln.list ../${genome.baseName}.TIR.intact.raw.fa.anno.list
 
 # get gff3 of intact TIR elements
 perl -nle 's/\\\\-\\\\+\\\\-/_Len:/; my (\$chr, \$method, \$supfam, \$s, \$e, \$anno) = (split)[0,1,2,3,4,8]; my \$class=\"DNA\"; \$class=\"MITE\" if \$e-\$s+1 <= 600; my (\$tir, \$iden, \$tsd)=(\$1, \$2/100, \$3) if \$anno=~/TIR:(.*)_([0-9.]+)_TSD:([a-z0-9._]+)_LEN/i; print \"\$chr \$s \$e \$chr:\$s..\$e \$class/\$supfam structural \$iden . . . TSD=\$tsd;TIR=\$tir\"' ./TIR-Learner-Result/TIR-Learner_FinalAnn.gff3 |\
-    perl ${projectDir}/util/output_by_list.pl 1 4 - 1 \
-    ${genome.baseName}.TIR.intact.raw.fa -MSU0 -MSU1 \
+    perl ${projectDir}/util/output_by_list.pl 4 - 1 \
+    ../${genome.baseName}.TIR.intact.raw.fa -MSU0 -MSU1 \
     > ${genome.baseName}.TIR.intact.raw.bed
 
-perl ${projectDir}/bed2gff.pl ${genome.baseName}.TIR.intact.raw.bed TIR > ${genome.baseName}.TIR.intact.raw.gff3
-
+perl ${projectDir}/util/bed2gff.pl ${genome.baseName}.TIR.intact.raw.bed TIR > ../${genome.baseName}.TIR.intact.raw.gff3
+cp ../${genome.baseName}.TIR.intact.raw.fa ../${genome.baseName}.TIR.intact.fa
 """
 }
 
 process helitron_scanner {
+    tag "${genome.baseName}"
     input:
         path(genome)
     output:
         path("${genome.baseName}.Helitron.intact.raw.gff3")
     conda 'bioconda::tesorter bioconda::mdust bioconda::trf'
     cpus 4
+    publishDir 'out_helitron_scanner'
 
 """
 sh ${projectDir}/util/run_helitron_scanner.sh \
