@@ -363,7 +363,7 @@ perl ${projectDir}/util/cleanup_tandem.pl \
     -cleanN 1 \
     -cleanT 1 \
     -f ${genome}.HelitronScanner.filtered.fa.pass.fa.dusted > ${genome}.HelitronScanner.filtered.fa.pass.fa.dusted.cln \
-    | perl -nle 's/^(>.*)\\\\s+(.*)\\\$/\\\$1#DNA\\/Helitron\\t\\\$2/; print \\\$_' > ${genome}.HelitronScanner.filtered.fa.pass.fa.dusted.cln
+    | perl -nle 's/^(>.*)\s+(.*)$/$1#DNA\/Helitron\t$2/; print $_' > ${genome}.HelitronScanner.filtered.fa.pass.fa.dusted.cln
 
 # annotate and remove non-Helitron candidates
 TEsorter ${genome}.HelitronScanner.filtered.fa.pass.fa.dusted.cln \

@@ -13,6 +13,8 @@ while (<ID>){
 	s/>//;
 	my ($chr, $element_start, $element_end, $element_length, $TE_ID, $TE_class, $iden, $score, $strand, $phase, $extra, $id, $ext);
 	($id, $ext) = (split /\s+/, $_, 2);
+	# print($id . "\n");
+        # seqc3532:423737..438654
 	($chr, $element_start, $element_end, $TE_class) = ($1, $2, $3, $4) if $id =~ /^(.*):([0-9]+)\.\.([0-9]+)#(\S+)/;
 	$TE_ID = "$chr:$element_start..$element_end";
 	($element_end, $element_start) = ($element_start, $element_end) if $element_start > $element_end;
