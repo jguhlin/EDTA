@@ -96,55 +96,61 @@ process ltr_retriever {
         path(harvest)
         path(finder)
     output:
-        tuple path("${genome.baseName}.LTR.intact.raw.fa"), path("${genome.baseName}.LTRlib.fa"), path("${genome.baseName}.LTR.intact.raw.fa.anno.list")
+        tuple path("${genome.baseName}.LTR.intact.raw.fa", optional: true), path("${genome.baseName}.LTRlib.fa", optional: true), path("${genome.baseName}.LTR.intact.raw.fa.anno.list", optional: true)
     conda 'bioconda::ltr_retriever bioconda::repeatmasker bioconda::trf bioconda::mdust bioconda::tesorter'
     cpus 8
 shell:
 '''
+touch !{genome}.pass.list
 cat !{harvest} !{finder} > rawLTR.scn
 LTR_retriever -genome !{genome} -inharvest rawLTR.scn \
     -u !{params.u} \
     -threads !{task.cpus} \
     -noanno
 
-awk '{if (\$1 !~ /#/) print \$1\"\\t\"\$1}' !{genome}.pass.list |\
-perl !{projectDir}/util/call_seq_by_list.pl - -C !{genome} > !{genome.baseName}.LTR.intact.fa.ori
-perl -i -nle 's/\\|.*//; print \$_' !{genome.baseName}.LTR.intact.fa.ori
-perl !{projectDir}/util/rename_LTR_skim.pl !{genome.baseName}.LTR.intact.fa.ori !{genome}.defalse > !{genome.baseName}.LTR.intact.fa.anno
-mv !{genome.baseName}.LTR.intact.fa.anno !{genome.baseName}.LTR.intact.fa.ori
+if [ -s "!{genome}.pass.list" ]; then
+	awk '{if (\$1 !~ /#/) print \$1\"\\t\"\$1}' !{genome}.pass.list |\
+	perl !{projectDir}/util/call_seq_by_list.pl - -C !{genome} > !{genome.baseName}.LTR.intact.fa.ori
+	perl -i -nle 's/\\|.*//; print \$_' !{genome.baseName}.LTR.intact.fa.ori
+	perl !{projectDir}/util/rename_LTR_skim.pl !{genome.baseName}.LTR.intact.fa.ori !{genome}.defalse > !{genome.baseName}.LTR.intact.fa.anno
+	mv !{genome.baseName}.LTR.intact.fa.anno !{genome.baseName}.LTR.intact.fa.ori
 
-# remove simple repeats and candidates with simple repeats at terminals
-mdust !{genome.baseName}.LTR.intact.fa.ori > !{genome.baseName}.LTR.intact.fa.ori.dusted
-perl !{projectDir}/util/cleanup_tandem.pl -misschar N \
-    -nc 50000 \
-    -nr 0.9 \
-    -minlen 100 \
-    -minscore 3000 \
-    -trf 1 \
-    -cleanN 1 \
-    -cleanT 1 \
-    -f !{genome.baseName}.LTR.intact.fa.ori.dusted > !{genome.baseName}.LTR.intact.fa.ori.dusted.cln
+	# remove simple repeats and candidates with simple repeats at terminals
+	mdust !{genome.baseName}.LTR.intact.fa.ori > !{genome.baseName}.LTR.intact.fa.ori.dusted
+	perl !{projectDir}/util/cleanup_tandem.pl -misschar N \
+	    -nc 50000 \
+	    -nr 0.9 \
+	    -minlen 100 \
+	    -minscore 3000 \
+	    -trf 1 \
+	    -cleanN 1 \
+	    -cleanT 1 \
+	    -f !{genome.baseName}.LTR.intact.fa.ori.dusted > !{genome.baseName}.LTR.intact.fa.ori.dusted.cln
 
-# annotate and remove not LTR candidates
-TEsorter !{genome.baseName}.LTR.intact.fa.ori.dusted.cln --disable-pass2 -p !{task.cpus}
-perl !{projectDir}/util/cleanup_misclas.pl !{genome.baseName}.LTR.intact.fa.ori.dusted.cln.rexdb.cls.tsv
-mv !{genome.baseName}.LTR.intact.fa.ori.dusted.cln.cln !{genome.baseName}.LTR.intact.raw.fa
-mv !{genome.baseName}.LTR.intact.fa.ori.dusted.cln.cln.list !{genome.baseName}.LTR.intact.raw.fa.anno.list
-
-# generate annotated output and gff
-perl !{projectDir}/util/output_by_list.pl 1 \
-    !{genome.baseName}.LTR.intact.fa.ori 1 \
-    !{genome.baseName}.LTR.intact.raw.fa \
-    -FA -ex|grep \\>|perl -nle \
-    's/>//; print "Name\\t\$_"' > !{genome.baseName}.LTR.intact.fa.ori.rmlist
-
-perl !{projectDir}/util/filter_gff3.pl !{genome.baseName}.pass.list.gff3 \
-    !{genome.baseName}.LTR.intact.fa.ori.rmlist \
-    | perl -nle 's/LTR_retriever/EDTA/gi; print \$_' \
-    > !{genome.baseName}.LTR.intact.raw.gff3
-
+	# annotate and remove not LTR candidates
+	TEsorter !{genome.baseName}.LTR.intact.fa.ori.dusted.cln --disable-pass2 -p !{task.cpus}
+	perl !{projectDir}/util/cleanup_misclas.pl !{genome.baseName}.LTR.intact.fa.ori.dusted.cln.rexdb.cls.tsv
+	mv !{genome.baseName}.LTR.intact.fa.ori.dusted.cln.cln !{genome.baseName}.LTR.intact.raw.fa
+	mv !{genome.baseName}.LTR.intact.fa.ori.dusted.cln.cln.list !{genome.baseName}.LTR.intact.raw.fa.anno.list
+	
+	# generate annotated output and gff
+	perl !{projectDir}/util/output_by_list.pl 1 \
+	    !{genome.baseName}.LTR.intact.fa.ori 1 \
+	    !{genome.baseName}.LTR.intact.raw.fa \
+	    -FA -ex|grep \\>|perl -nle \
+	    's/>//; print "Name\\t\$_"' > !{genome.baseName}.LTR.intact.fa.ori.rmlist
+	
+	perl !{projectDir}/util/filter_gff3.pl !{genome.baseName}.pass.list.gff3 \
+	    !{genome.baseName}.LTR.intact.fa.ori.rmlist \
+	    | perl -nle 's/LTR_retriever/EDTA/gi; print \$_' \
+	    > !{genome.baseName}.LTR.intact.raw.gff3
+fi
+	
 # copy result files out
 touch !{genome.baseName}.LTRlib.fa
+touch !{genome.baseName}.LTR.intact.raw.fa
+touch !{genome.baseName}.LTRlib.fa
+touch !{genome.baseName}.LTR.intact.raw.fa.anno.list
 '''
 }
 
@@ -153,11 +159,16 @@ process annosine {
         path(genome)
     output:
         path("${genome.baseName}.SINE.raw.fa")
-    conda 'bioconda::annosine2 bioconda::tesorter'
+    conda 'bioconda::annosine2 bioconda::tesorter biopython'
     cpus 16
 
 shell:
 '''
+
+touch Seed_SINE.fa
+
+python !{projectDir}/bin/SINEFinder.py !{genome}
+
 AnnoSINE_v2 -t !{task.cpus} \
   -a 2 \
   --num_alignments 50000 \
@@ -200,7 +211,7 @@ RepeatModeler -engine ncbi -threads !{task.cpus} -database !{genome.baseName}
 awk '{print \$1}' !{genome.baseName}-families.fa > !{genome.baseName}.RM2.raw.fa
 TEsorter !{genome.baseName}.RM2.raw.fa --disable-pass2 -p !{task.cpus}
 
-perl !{projectDir}/util/cleanup_missclas.pl !{genome.baseName}.RM2.raw.fa.rexdb.cls.tsv
+perl !{projectDir}/util/cleanup_misclas.pl !{genome.baseName}.RM2.raw.fa.rexdb.cls.tsv
 
 TESorter !{genome.baseName}.RM2.raw.fa.cln --disable-pass2 -p !{task.cpus}
 perl -nle 's/>\\S+\\s+/>/; print \$_' !{genome.baseName}.RM2.raw.fa.cln.rexdb.cls.lib > !{genome.baseName}.RM2.raw.fa.cln
@@ -272,7 +283,7 @@ perl ${projectDir}/cleanup_tandem.pl \
 
 # annotate and remove non-TIR candidates
 TEsorter ${genome.baseName}.TIR.ext30.fa.pass.fa.dusted.cln --disable-pass2 -p ${task.cpus}
-perl ${projectDir}/cleanup_missclas.pl \
+perl ${projectDir}/util/cleanup_misclas.pl \
     ${genome.baseName}.TIR.ext30.fa.pass.fa.dusted.cln.rexdb.cls.tsv
 mv ${genome.baseName}.TIR.ext30.fa.pass.fa.dusted.cln.cln ${genome.baseName}.TIR.intact.raw.fa
 cp ${genome.baseName}.TIR.ext30.fa.pass.fa.dusted.cln.cln.list ${genome.baseName}.TIR.intact.raw.fa.anno.list
@@ -293,7 +304,7 @@ process helitron_scanner {
         path(genome)
     output:
         path("${genome.baseName}.Helitron.intact.raw.gff3")
-    conda 'bioconda::tesorter bioconda::mdust'
+    conda 'bioconda::tesorter bioconda::mdust bioconda::trf'
     cpus 4
 
 """
@@ -322,9 +333,9 @@ perl ${projectDir}/util/output_by_list.pl 1 \
     ${genome}.HelitronScanner.filtered.fa \
     1 \
     ${genome}.HelitronScanner.filtered.ext.fa \
-    -FA > ${genome}.HelitronScanner.filtered.fa.ext.fa
+    -FA > ${genome}.HelitronScanner.filtered.pass.fa
 
-mdust ${genome}.HelitronScanner.filtered.fa.pass.fa > ${genome}.HelitronScanner.filtered.fa.pass.fa.dusted
+mdust ${genome}.HelitronScanner.filtered.pass.fa > ${genome}.HelitronScanner.filtered.fa.pass.fa.dusted
 perl ${projectDir}/util/cleanup_tandem.pl \
     -misschar N \
     -nc 50000 \
@@ -342,7 +353,7 @@ TEsorter ${genome}.HelitronScanner.filtered.fa.pass.fa.dusted.cln \
     --disable-pass2 \
     -p ${task.cpus}
 
-perl ${projectDir}/cleanup_missclas.pl \
+perl ${projectDir}/util/cleanup_misclas.pl \
     ${genome}.HelitronScanner.filtered.fa.pass.fa.dusted.cln.rexdb.cls.tsv
 mv ${genome}.HelitronScanner.filtered.fa.pass.fa.dusted.cln.cln ${genome.baseName}.Helitron.intact.raw.fa
 cp ${genome}.HelitronScanner.filtered.fa.pass.fa.dusted.cln.cln.list ${genome.baseName}.Helitron.intact.raw.fa.anno.list
@@ -353,6 +364,9 @@ perl ${projectDir}/util/make_bed_with_intact.pl \
 perl ${projectDir}/util/bed2gff.pl ${genome.baseName}.Helitron.intact.raw.bed HEL > ${genome.baseName}.Helitron.intact.raw.gff3
 """
 }
+
+// Includes
+include { REPRISE } from './subworkflows/local/reprise'
 
 workflow {
     genomes = channel.fromPath(params.genomes + "/*")
@@ -371,4 +385,5 @@ workflow {
     repeatmodeler(sanitized_genomes)
     tir_learner(sanitized_genomes)
     helitron_scanner(sanitized_genomes)
+    REPRISE(sanitized_genomes)
 }
