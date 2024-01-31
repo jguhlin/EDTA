@@ -8,8 +8,9 @@ process reprise {
     output:
         path("${genome.baseName}.clustered.reprof")
     cpus 16
-    memory '2 GB'
+    memory '22 GB'
     publishDir 'out_reprise'
+    conda 'bioconda::cd-hit'
 
     """
     #REPrise -input ${genome} -output ${genome.baseName} -pa ${task.cpus}
