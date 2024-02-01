@@ -314,6 +314,7 @@ cp ../${genome.baseName}.TIR.intact.raw.fa ../${genome.baseName}.TIR.intact.fa
 """
 }
 
+// It's actually single threaded
 process helitron_scanner {
     tag "${genome.baseName}"
     input:
@@ -321,7 +322,7 @@ process helitron_scanner {
     output:
         path("${genome.baseName}.Helitron.intact.raw.gff3")
     conda 'bioconda::tesorter bioconda::mdust bioconda::trf'
-    cpus 4
+    cpus 1 
     publishDir 'out_helitron_scanner'
 
 """
@@ -362,8 +363,9 @@ perl ${projectDir}/util/cleanup_tandem.pl \
     -trf 1 \
     -cleanN 1 \
     -cleanT 1 \
-    -f ${genome}.HelitronScanner.filtered.fa.pass.fa.dusted > ${genome}.HelitronScanner.filtered.fa.pass.fa.dusted.cln \
-    | perl -nle 's/^(>.*)\s+(.*)\$/\$1#DNA\/Helitron\t\$2/; print \$_' > ${genome}.HelitronScanner.filtered.fa.pass.fa.dusted.cln
+    -f ${genome}.HelitronScanner.filtered.fa.pass.fa.dusted | perl ${projectDir}/util/helitron_renamer.pl > ${genome}.HelitronScanner.filtered.fa.pass.fa.dusted.cln
+# Too complicated for nextflow
+# perl -nle 's/^(>.*)\\s+(.*)\\\$/\\\$1#DNA\\/Helitron\\t\\\$2/; print \\\$_' > ${genome}.HelitronScanner.filtered.fa.pass.fa.dusted.cln
 
 # annotate and remove non-Helitron candidates
 TEsorter ${genome}.HelitronScanner.filtered.fa.pass.fa.dusted.cln \
@@ -400,7 +402,7 @@ workflow {
     // These can also run in parallel
     annosine(sanitized_genomes)
     repeatmodeler(sanitized_genomes)
-    tir_learner(sanitized_genomes)
+    // tir_learner(sanitized_genomes)
     helitron_scanner(sanitized_genomes)
     REPRISE(sanitized_genomes)
 }
