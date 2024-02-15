@@ -36,6 +36,8 @@ if ($threads !~ /^[0-9]+$/){ die "The expected value for the threads parameter i
 
 // Rename FASTA headers (just makes everything easier later)
 // TODO: Put fffx on bioconda or somewhere so it just runs, otherwise tiny container
+// NEW: Filter out small contigs (1000bp or less, remove)
+// TODO: Make sanitize command do filtering, bbmap is memory hungry!
 process sanitize {
     tag "${x.baseName}"
     input:
@@ -43,9 +45,12 @@ process sanitize {
     output:
         tuple path("${x.baseName}_sanitized.fasta"), path("${x.baseName}_sanitized.translation_table.tsv")
     publishDir 'sanitized_genomes'
+    time "10m"
 
 """
-fffx sanitize ${x} ${x.baseName}_sanitized
+# reformat.sh -Xmx5g in=${x} out=filtered.fa minlength=1000
+fffx length-filter ${x} filtered.fa 1000
+fffx sanitize filtered.fa ${x.baseName}_sanitized
 """
 }
 
@@ -167,8 +172,8 @@ process annosine {
         path(genome)
     output:
         path("${genome.baseName}.SINE.raw.fa")
-    conda 'python=3.9 bioconda::annosine2 bioconda::tesorter biopython'
-    cpus 16
+    conda 'python=3.10 bioconda::annosine2 bioconda::tesorter biopython'
+    cpus 8
     publishDir 'out_annosine'
 
 shell:
@@ -402,7 +407,7 @@ workflow {
     // These can also run in parallel
     annosine(sanitized_genomes)
     repeatmodeler(sanitized_genomes)
-    // tir_learner(sanitized_genomes)
+    tir_learner(sanitized_genomes)
     helitron_scanner(sanitized_genomes)
-    REPRISE(sanitized_genomes)
+    // REPRISE(sanitized_genomes)
 }
