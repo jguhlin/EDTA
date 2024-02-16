@@ -256,7 +256,7 @@ process tir_learner {
     output:
         tuple path("${genome.baseName}.TIR.intact.fa"), path("${genome.baseName}.TIR.intact.raw.fa"), path("${genome.baseName}.TIR.intact.raw.gff3")
     cpus 16
-    conda 'python=3.9 bioconda::genometools-genometools bioconda::genericrepeatfinder bioconda::cd-hit bioconda::mdust bioconda::tesorter blast pandas swifter regex scikit-learn tensorflow=2.11.0=cuda112py39h01bd6f0_0 bioconda::trf'
+    conda 'python=3.10 bioconda::genometools-genometools bioconda::genericrepeatfinder bioconda::cd-hit bioconda::mdust bioconda::tesorter blast pandas swifter regex scikit-learn tensorflow bioconda::trf'
     publishDir 'out_tir_learner'
 
 """
