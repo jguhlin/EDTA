@@ -1,0 +1,34 @@
+[
+  {
+    "objectID": "quickstart.html",
+    "href": "quickstart.html",
+    "title": "Quickstart",
+    "section": "",
+    "text": "Installing Nextflow\ncurl -s https://get.nextflow.io | bash\nCreate a file named nextflow.config with the following content:\napptainer.enabled = true\nconda.enabled = true\nThis enables the use of apptainer (formerly: singularity), and conda environments.\n\n\n\n\n\n\nUsing Mamba\n\n\n\n\n\nIf mamba is available, add this line to speed up creation of environments:\nconda.useMamba = true\n\n\n\n\n\n\n\n\n\nUsing SLURM or other Job Management Systems\n\n\n\n\n\nIf using SLURM, add this line to use the SLURM executor:\nprocess.executor = 'slurm'\nNextflow has additional executors available.\n\n\n\n\n\nSetting up Input Files\n\n\n\n\n\n\nUpdate before release!\n\n\n\n\n\nThis should point to Shujun’s github, and not need the -r nextflow flag.\n\n\n\nCreate a directory, such as genomes and place your genomes there. Then, run the following:\n./nextflow drop jguhlin/EDTA\n./nextflow run jguhlin/EDTA/ -r nextflow --genomes genomes\n\n\n\n\n\n\nNextflow drop is important during development\n\n\n\nUntil we have version numbers, best to drop it before trying to run it.",
+    "crumbs": [
+      "Home",
+      "Quickstart"
+    ]
+  },
+  {
+    "objectID": "faq.html",
+    "href": "faq.html",
+    "title": "FAQ",
+    "section": "",
+    "text": "About this site"
+  },
+  {
+    "objectID": "about.html",
+    "href": "about.html",
+    "title": "About",
+    "section": "",
+    "text": "About this site"
+  },
+  {
+    "objectID": "index.html",
+    "href": "index.html",
+    "title": "EDTA: Nextflow Documentation",
+    "section": "",
+    "text": "This is a Quarto website.\nTo learn more about Quarto websites visit https://quarto.org/docs/websites."
+  }
+]
