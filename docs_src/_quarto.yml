@@ -1,6 +1,6 @@
 project:
   type: website
-  output-dir: "../docs_publish"
+  output-dir: "../docs"
 
 website:
   title: "EDTA: Nextflow Documentation"
