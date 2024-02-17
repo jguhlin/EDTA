@@ -1,5 +1,24 @@
 [
   {
+    "objectID": "index.html",
+    "href": "index.html",
+    "title": "EDTA: Nextflow Documentation",
+    "section": "",
+    "text": "EDTA is the Extensive de novo TE Annotator."
+  },
+  {
+    "objectID": "faq.html",
+    "href": "faq.html",
+    "title": "FAQ",
+    "section": "",
+    "text": "About this site",
+    "crumbs": [
+      "Home",
+      "Help",
+      "FAQ"
+    ]
+  },
+  {
     "objectID": "quickstart.html",
     "href": "quickstart.html",
     "title": "Quickstart",
@@ -9,26 +28,5 @@
       "Home",
       "Quickstart"
     ]
-  },
-  {
-    "objectID": "faq.html",
-    "href": "faq.html",
-    "title": "FAQ",
-    "section": "",
-    "text": "About this site"
-  },
-  {
-    "objectID": "about.html",
-    "href": "about.html",
-    "title": "About",
-    "section": "",
-    "text": "About this site"
-  },
-  {
-    "objectID": "index.html",
-    "href": "index.html",
-    "title": "EDTA: Nextflow Documentation",
-    "section": "",
-    "text": "This is a Quarto website.\nTo learn more about Quarto websites visit https://quarto.org/docs/websites."
   }
 ]

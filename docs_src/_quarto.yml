@@ -22,12 +22,21 @@ website:
       style: "docked"
       contents:
         - quickstart.qmd
-        - section: "Layout"
+        - section: "Manual"
           contents:
-            - layout.qmd
-            - layout-knitr.qmd
-            - layout-jupyter.qmd
-
+            - installation.qmd
+            - usage.qmd
+            - advanced_usage.qmd
+            - output.qmd
+        - pipeline_overview.qmd
+        - section: "Help"
+          contents:
+            - common_problems.qmd
+            - faq.qmd
+            - getting_help.qmd
+        - citation.qmd
+        - license.qmd
+        
 format:
   html:
     # Maybe slate
