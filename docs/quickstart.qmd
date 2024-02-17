@@ -1,0 +1,52 @@
+---
+title: "Quickstart"
+format: html
+---
+
+# Installing Nextflow
+
+```bash
+curl -s https://get.nextflow.io | bash
+```
+
+Create a file named `nextflow.config` with the following content:
+```groovy
+apptainer.enabled = true
+conda.enabled = true
+```
+This enables the use of [apptainer](https://apptainer.org/) (formerly: singularity), and conda environments.
+
+::: {.callout-note collapse="true"}
+## Using Mamba
+If [mamba](https://github.com/mamba-org/mamba) is available, add this line to speed up creation of environments:
+```groovy
+conda.useMamba = true
+```
+:::
+
+::: {.callout-note collapse="true"}
+## Using SLURM or other Job Management Systems
+If using SLURM, add this line to use the SLURM executor:
+```groovy
+process.executor = 'slurm'
+```
+
+Nextflow has additional [executors](https://www.nextflow.io/docs/latest/executor.html) available.
+:::
+
+# Setting up Input Files
+::: {.callout-important collapse="true"}
+## Update before release!
+This should point to Shujun's github, and not need the -r nextflow flag.
+:::
+
+Create a directory, such as `genomes` and place your genomes there. Then, run the following:
+```bash
+./nextflow drop jguhlin/EDTA
+./nextflow run jguhlin/EDTA/ -r nextflow --genomes genomes
+```
+
+::: {.callout-important}
+## Nextflow drop is important during development
+Until we have version numbers, best to drop it before trying to run it.
+:::
