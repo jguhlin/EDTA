@@ -227,7 +227,7 @@ process repeatmodeler {
         path(genome)
     output:
         tuple path("${genome.baseName}.LINE.raw.fa"), path("${genome.baseName}.RM2.fa"), path("${genome.baseName}.RM2.raw.fa")
-    conda 'bioconda::repeatmodeler bioconda::tesorter'
+    conda 'bioconda::repeatmodeler=2.0.2a=pl5262h9ee0642_0 tesorter=1.4.6=pyhdfd78af_0'
     cpus 32
     time '6d'
     memory 32.GB
