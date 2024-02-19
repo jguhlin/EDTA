@@ -46,6 +46,8 @@ process sanitize {
         tuple path("${x.baseName}_sanitized.fasta"), path("${x.baseName}_sanitized.translation_table.tsv")
     publishDir 'sanitized_genomes'
     time "10m"
+    memory 2.GB
+    cpus 1
 
 """
 # reformat.sh -Xmx5g in=${x} out=filtered.fa minlength=1000
@@ -63,6 +65,8 @@ process ltr_harvest {
         path("${genome}.harvest.combine.scn")
     conda 'bioconda::genometools-genometools'
     cpus 8
+    memory 8.GB
+    time '6h'
     publishDir 'out_ltr_harvest'
 """
 perl ${projectDir}/bin/LTR_HARVEST_parallel/LTR_HARVEST_parallel \
@@ -81,6 +85,8 @@ process ltr_finder {
     output:
         path("${genome}.finder.combine.scn")
     cpus 8
+    memory 8.GB
+    time '8h'
     publishDir 'out_ltr_finder'
 """
 perl ${projectDir}/bin/LTR_FINDER_parallel/LTR_FINDER_parallel \
@@ -110,6 +116,8 @@ process ltr_retriever {
         tuple path("${genome.baseName}.LTR.intact.raw.fa", optional: true), path("${genome.baseName}.LTRlib.fa", optional: true), path("${genome.baseName}.LTR.intact.raw.fa.anno.list", optional: true)
     conda 'bioconda::ltr_retriever bioconda::repeatmasker bioconda::trf bioconda::mdust bioconda::tesorter'
     cpus 8
+    memory 8.GB
+    time '8h'
     publishDir 'out_ltr_retriever'
 shell:
 '''
@@ -174,6 +182,8 @@ process annosine {
         path("${genome.baseName}.SINE.raw.fa")
     conda 'python=3.10 bioconda::annosine2 bioconda::tesorter biopython'
     cpus 8
+    memory 16.GB
+    time '4h'
     publishDir 'out_annosine'
 
 shell:
@@ -219,6 +229,8 @@ process repeatmodeler {
         tuple path("${genome.baseName}.LINE.raw.fa"), path("${genome.baseName}.RM2.fa"), path("${genome.baseName}.RM2.raw.fa")
     conda 'bioconda::repeatmodeler bioconda::tesorter'
     cpus 32
+    time '6d'
+    memory 32.GB
     publishDir 'out_repeatmodeler'
 
 shell:
@@ -256,6 +268,8 @@ process tir_learner {
     output:
         tuple path("${genome.baseName}.TIR.intact.fa"), path("${genome.baseName}.TIR.intact.raw.fa"), path("${genome.baseName}.TIR.intact.raw.gff3")
     cpus 16
+    memory 16.GB
+    time '12h'
     conda 'python=3.10 bioconda::genometools-genometools bioconda::genericrepeatfinder bioconda::cd-hit bioconda::mdust bioconda::tesorter blast pandas swifter regex scikit-learn tensorflow bioconda::trf'
     publishDir 'out_tir_learner'
 
@@ -328,6 +342,8 @@ process helitron_scanner {
         path("${genome.baseName}.Helitron.intact.raw.gff3")
     conda 'bioconda::tesorter bioconda::mdust bioconda::trf'
     cpus 1 
+    time '18h'
+    memory 32.GB
     publishDir 'out_helitron_scanner'
 
 """
