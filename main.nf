@@ -46,7 +46,7 @@ process sanitize {
         tuple path("${x.baseName}_sanitized.fasta"), path("${x.baseName}_sanitized.translation_table.tsv")
     publishDir 'sanitized_genomes'
     time "10m"
-    memory 2.GB
+    memory 3.GB
     cpus 1
 
 """
