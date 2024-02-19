@@ -43,10 +43,12 @@ This should point to Shujun's github, and not need the -r nextflow flag.
 Create a directory, such as `genomes` and place your genomes there. Then, run the following:
 ```bash
 ./nextflow drop jguhlin/EDTA
-./nextflow run jguhlin/EDTA/ -r nextflow --genomes genomes
+./nextflow run jguhlin/EDTA/ -r nextflow --genomes genomes -with-conda
 ```
 
 ::: {.callout-important}
 ## Nextflow drop is important during development
 Until we have version numbers, best to drop it before trying to run it.
+
+Also not certain why we need -with-conda when a nextflow.config file is present.
 :::

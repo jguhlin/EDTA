@@ -341,7 +341,7 @@ Update before release!
 </div>
 <p>Create a directory, such as <code>genomes</code> and place your genomes there. Then, run the following:</p>
 <div class="sourceCode" id="cb5"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">./nextflow</span> drop jguhlin/EDTA</span>
-<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="ex">./nextflow</span> run jguhlin/EDTA/ <span class="at">-r</span> nextflow <span class="at">--genomes</span> genomes</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="ex">./nextflow</span> run jguhlin/EDTA/ <span class="at">-r</span> nextflow <span class="at">--genomes</span> genomes <span class="at">-with-conda</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="callout callout-style-default callout-important callout-titled">
 <div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">
@@ -353,6 +353,7 @@ Nextflow drop is important during development
 </div>
 <div class="callout-body-container callout-body">
 <p>Until we have version numbers, best to drop it before trying to run it.</p>
+<p>Also not certain why we need -with-conda when a nextflow.config file is present.</p>
 </div>
 </div>
 
