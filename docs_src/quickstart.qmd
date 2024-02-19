@@ -50,5 +50,5 @@ Create a directory, such as `genomes` and place your genomes there. Then, run th
 ## Nextflow drop is important during development
 Until we have version numbers, best to drop it before trying to run it.
 
-Also not certain why we need -with-conda when a nextflow.config file is present.
+Also not certain why we need -with-conda when a nextflow.config file is present. *This may have been a typo in my nextflow.config*
 :::
