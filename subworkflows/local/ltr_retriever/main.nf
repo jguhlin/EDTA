@@ -34,7 +34,8 @@ LTR_retriever -genome ${genome} -inharvest rawLTR.scn \
 process process_output {
     tag "${genome.baseName}"
     input:
-        tuple path(genome), path(harvest)
+        path(genome)
+        path(harvest)
     output:
         tuple path("${genome.baseName}.LTR.intact.raw.fa", optional: true), path("${genome.baseName}.LTRlib.fa", optional: true), path("${genome.baseName}.LTR.intact.raw.fa.anno.list", optional: true)
     conda 'bioconda::trf bioconda::mdust bioconda::tesorter'
@@ -93,6 +94,6 @@ workflow LTR_RETRIEVER {
         execute(genome, ltr_harvest_out, ltr_finder_out)
         
         // Filter out
-        process_output(ltr_retriever.out, genome)
+        process_output(execute.out, genome)
         
 }

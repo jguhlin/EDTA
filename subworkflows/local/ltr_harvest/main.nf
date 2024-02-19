@@ -24,5 +24,7 @@ workflow LTR_HARVEST {
     
     main:
         execute(genomes)
-        
+    
+    emit: 
+        ltrs = execute.out
 }

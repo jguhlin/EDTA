@@ -32,5 +32,7 @@ workflow LTR_FINDER {
     
     main:
         execute(genomes)
-        
+    
+    emit: 
+        ltrs = execute.out
 }
