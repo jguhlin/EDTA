@@ -86,7 +86,7 @@ process ltr_finder {
         path("${genome}.finder.combine.scn")
     cpus 8
     memory 8.GB
-    time '8h'
+    time '18h'
     publishDir 'out_ltr_finder'
 """
 perl ${projectDir}/bin/LTR_FINDER_parallel/LTR_FINDER_parallel \
