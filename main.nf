@@ -50,30 +50,8 @@ process sanitize {
     cpus 1
 
 """
-# reformat.sh -Xmx5g in=${x} out=filtered.fa minlength=1000
 fffx length-filter ${x} filtered.fa 1000
 fffx sanitize filtered.fa ${x.baseName}_sanitized
-"""
-}
-
-// TODO: Rustize LTR_HARVEST_parallel
-process ltr_harvest {
-    tag "${genome.baseName}"
-    input:
-        path(genome)
-    output:
-        path("${genome}.harvest.combine.scn")
-    conda 'bioconda::genometools-genometools'
-    cpus 8
-    memory 8.GB
-    time '6h'
-    publishDir 'out_ltr_harvest'
-"""
-perl ${projectDir}/bin/LTR_HARVEST_parallel/LTR_HARVEST_parallel \
-    -seq ${genome} \
-    -threads ${task.cpus} \
-    -size 10000000 \
-    -time 300
 """
 }
 
@@ -406,7 +384,7 @@ perl ${projectDir}/util/bed2gff.pl ${genome.baseName}.Helitron.intact.raw.bed HE
 }
 
 // Includes
-include { REPRISE } from './subworkflows/local/reprise'
+include { LTR_HARVEST } from './subworkflows/local/ltr_harvest'
 
 workflow {
     genomes = channel.fromPath(params.genomes + "/*")
@@ -425,5 +403,4 @@ workflow {
     repeatmodeler(sanitized_genomes)
     tir_learner(sanitized_genomes)
     helitron_scanner(sanitized_genomes)
-    // REPRISE(sanitized_genomes)
 }
