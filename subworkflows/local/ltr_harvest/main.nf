@@ -1,4 +1,4 @@
-process ltr_harvest {
+process execute {
     tag "${genome.baseName}"
     input:
         path(genome)
@@ -18,11 +18,11 @@ perl ${projectDir}/bin/LTR_HARVEST_parallel/LTR_HARVEST_parallel \
 """
 }
 
-workflow REPRISE {
+workflow LTR_HARVEST {
     take:
         genomes
     
     main:
-        ltr_harvest(genomes)
+        execute(genomes)
         
 }
