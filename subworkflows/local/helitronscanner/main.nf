@@ -1,4 +1,60 @@
-// It's actually single threaded
+process scan {
+    tag "HelitronScanner-${genome.baseName}"
+    input:
+        path(genome)
+        val(type)
+        val(rc)
+    output:
+        path("${genome.baseName}.HelitronScanner${rc ? '.rc' : ''}.${type == 'Head' ? 'head' : 'tail'}")
+    cpus 1
+    time '18h'
+    memory 150.GB
+    publishDir 'out_helitron_scanner'
+
+"""
+java -Xmx${task.memory.giga} \
+    -jar ${workflow.projectDir}/bin/HelitronScanner/HelitronScanner.jar \
+    scan${type} \
+    ${rc ? '--rc' : ''} \
+    -lcv_filepath ${workflow.projectDir}/bin/HelitronScanner/TrainingSet/head.lcvs \
+    -g $genome \
+    -buffer_size 0 \
+    -output ${genome.baseName}.HelitronScanner.${rc ? '.rc' : ''}.${type == 'Head' ? 'head' : 'tail'}
+"""
+}
+
+process pairEndsDraw {
+    input:
+        path(genome)
+        path(head)
+        path(tail)
+        val(rc)
+    output:
+        path("${genome.baseName}.HelitronScanner${rc ? '.rc' : ''}.draw")
+    cpus 1
+    time '6h'
+    memory 32.GB
+    publishDir 'out_helitron_scanner'
+"""
+java -Xmx${task.memory.giga} \
+    -jar ${workflow.projectDir}/bin/HelitronScanner/HelitronScanner.jar \
+    pairends \
+    -head_score ${head} \
+    -tail_score ${tail} \
+    ${rc ? '--rc' : ''} \
+    -output pairends
+
+java -Xmx${task.memory.giga} \
+    -jar ${workflow.projectDir}/bin/HelitronScanner/HelitronScanner.jar \
+    draw \
+    -pscore pairends \
+    -g ${genome} \
+    -output ${genome.baseName}.HelitronScanner${rc ? '.rc' : ''}.draw \
+    -pure_helitron
+
+"""
+}
+
 process helitron_scanner {
     tag "${genome.baseName}"
     input:
@@ -12,9 +68,8 @@ process helitron_scanner {
     publishDir 'out_helitron_scanner'
 
 """
-sh ${projectDir}/util/run_helitron_scanner.sh \
-    ${genome} \
-    ${task.cpus}
+
+# Below is all cleaning    
 
 perl ${projectDir}/util/format_helitronscanner_out.pl \
     -genome $genome \
@@ -73,5 +128,14 @@ perl ${projectDir}/util/bed2gff.pl ${genome.baseName}.Helitron.intact.raw.bed HE
 workflow HELITRONSCANNER {
     take:
         path(genome)
+
+    main:
+        head = scan(genome, type: 'Head', rc: false)
+        tail = scan(genome, type: 'Tail', rc: false)
+        head_rc = scan(genome, type: 'Head', rc: true)
+        tail_rc = scan(genome, type: 'Tail', rc: true)
+
+
+
     
 }
