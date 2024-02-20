@@ -142,11 +142,6 @@ sub Purifier() {
 #################################
 
 ## Purge contaminants in redundant libraries
-# purify intact LTR
-&Purifier("$LTRint", "$TIR", $mindiff_LTR);
-&Purifier("$LTRint.HQ", "$HEL", $mindiff_LTR);
-`mv $LTRint.HQ.HQ $LTRint.cln`;
-
 # purify raw LTR (clean LTR library is better than dirty intact LTR for purging LTRs from other TEs)
 &Purifier("$LTR", "$TIR", $mindiff_LTR);
 &Purifier("$LTR.HQ", "$HEL", $mindiff_LTR);
@@ -155,20 +150,27 @@ sub Purifier() {
 # purify Helitron
 &Purifier("$HEL", "$TIR", $mindiff_HEL);
 &Purifier("$HEL.HQ", "$LTR", $mindiff_LTR);
+`perl $cleanup_tandem -misschar l -Nscreen 1 -nc 50000 -nr 0.8 -minlen 80 -cleanN 1 -cleanT 0 -minrm 1 -trf 0 -f $HEL.HQ-$LTR.fa > $HEL.int.cln`; # more relaxed in filtering intact helitrons
 `mv $HEL.HQ.HQ $HEL.cln`;
 
 # purify TIR
 &Purifier("$TIR", "$LTR", $mindiff_TIR);
 &Purifier("$TIR.HQ", "$HEL", $mindiff_TIR);
+`perl $cleanup_tandem -misschar l -Nscreen 1 -nc 50000 -nr 0.8 -minlen 80 -cleanN 1 -cleanT 0 -minrm 1 -trf 0 -f $TIR.HQ-$HEL.fa > $TIR.int.cln`; # more relaxed in filtering intact TIRs
 `mv $TIR.HQ.HQ $TIR.cln`;
 
+# purify intact LTR from TIRs. Including Helitron is too damaging for now.
+&Purifier("$LTRint", "$TIR.cln", 10); # 10 is permissive
+`perl $cleanup_tandem -misschar l -Nscreen 1 -nc 50000 -nr 0.8 -minlen 80 -cleanN 1 -cleanT 0 -minrm 1 -trf 0 -f $LTRint-$TIR.cln.fa > $LTRint.cln`;
+#&Purifier("$LTRint.HQ", "$HEL.cln", 10); # 10 is permissive
+#`perl $cleanup_tandem -misschar l -Nscreen 1 -nc 50000 -nr 0.8 -minlen 80 -cleanN 1 -cleanT 0 -minrm 1 -trf 0 -f $LTRint.HQ-$HEL.cln.fa > $LTRint.cln`; # more relaxed in filtering intact LTRs
 
 ## Purge contaminants in non-redundant libraries
 # clean LINEs in LTRs
 if (-s "$LINE"){
-	$err = `${repeatmasker}RepeatMasker -e ncbi -pa $threads -q -no_is -norna -nolow -div 40 -lib $LINE $LTR 2>&1`;
+	$err = `${repeatmasker}RepeatMasker -e ncbi -pa $threads -q -no_is -nolow -div 40 -lib $LINE $LTR 2>&1`;
 	if ($err !~ /done/) {
-        	`ln -s $LTR $LTR.masked` if $err =~ s/^.*(No repetitive sequences were detected.*)\s+$/Warning: $1/s;
+        	`ln -s $LTR $LTR.masked` if $err =~ s/^.*(No repetitive sequences were detected.*)\s+$/Warning: No sequences were masked/s;
 	        print STDERR "\n$err\n";
         	}
 	`perl $cleanup_tandem -misschar N -nc 50000 -nr 0.9 -minlen 80 -minscore 3000 -trf 0 -cleanN 1 -cleanT 1 -f $LTR.masked > $LTR.cln`;
@@ -179,9 +181,9 @@ if (-s "$LINE"){
 # clean LINEs and LTRs in SINEs
 if (-s "$SINE"){
 	`cat $LTR.cln $LINE > $genome.LINE_LTR.raw.fa`;
-	$err = `${repeatmasker}RepeatMasker -e ncbi -pa $threads -q -no_is -norna -nolow -div 40 -lib $genome.LINE_LTR.raw.fa $SINE 2>&1`;
+	$err = `${repeatmasker}RepeatMasker -e ncbi -pa $threads -q -no_is -nolow -div 40 -lib $genome.LINE_LTR.raw.fa $SINE 2>&1`;
 	if ($err !~ /done/) {
-        	`ln -s $SINE $SINE.masked` if $err =~ s/^.*(No repetitive sequences were detected.*)\s+$/Warning: $1/s;
+        	`ln -s $SINE $SINE.masked` if $err =~ s/^.*(No repetitive sequences were detected.*)\s+$/Warning: No sequences were masked/s;
 	        print STDERR "\n$err\n";
         	}
 	`perl $cleanup_tandem -misschar N -nc 50000 -nr 0.9 -minlen 80 -minscore 3000 -trf 0 -cleanN 1 -f $SINE.masked > $SINE.cln`;
@@ -193,9 +195,9 @@ if (-s "$SINE"){
 ## clean LTRs and nonLTRs in TIRs and Helitrons
 `cat $TIR.cln $HEL.cln | perl -nle 's/>/\\n>/g unless /^>/; print \$_' > $genome.TIR.Helitron.fa.stg1.raw`;
 `cat $LTR.HQ $SINE.cln $LINE > $genome.LTR.SINE.LINE.fa`;
-$err = `${repeatmasker}RepeatMasker -e ncbi -pa $threads -q -no_is -norna -nolow -div 40 -lib $genome.LTR.SINE.LINE.fa $genome.TIR.Helitron.fa.stg1.raw 2>&1`;
+$err = `${repeatmasker}RepeatMasker -e ncbi -pa $threads -q -no_is -nolow -div 40 -lib $genome.LTR.SINE.LINE.fa $genome.TIR.Helitron.fa.stg1.raw 2>&1`;
 if ($err !~ /done/) {
-	`ln -s $genome.TIR.Helitron.fa.stg1.raw $genome.TIR.Helitron.fa.stg1.raw.masked` if $err =~ s/^.*(No repetitive sequences were detected.*)\s+$/Warning: $1/s;
+	`ln -s $genome.TIR.Helitron.fa.stg1.raw $genome.TIR.Helitron.fa.stg1.raw.masked` if $err =~ s/^.*(No repetitive sequences were detected.*)\s+$/Warning: No sequences were masked/s;
 	print STDERR "\n$err\n";
 	}
 `perl $cleanup_tandem -misschar N -nc 50000 -nr 0.9 -minlen 80 -minscore 3000 -trf 0 -cleanN 1 -cleanT 1 -f $genome.TIR.Helitron.fa.stg1.raw.masked > $genome.TIR.Helitron.fa.stg1.raw.cln`;
@@ -206,7 +208,7 @@ if ($err !~ /done/) {
 `cat $LTR.cln $LINE $SINE.cln $genome.TIR.Helitron.fa.stg1.raw.cln.cln > $genome.EDTA.fa.stg1`;
 
 ## generate clean intact TEs
-`cat $LTRint.cln $LINE $SINE.cln $TIR.cln $HEL.cln > $genome.EDTA.intact.fa.cln`;
+`cat $LTRint.cln $LINE $SINE.cln $TIR.int.cln $HEL.int.cln > $genome.EDTA.intact.fa.cln`;
 
 ## clean up the folder
 `rm *.ndb *.not *.ntf *.nto *.cat.gz *.cat *.masked *.ori.out *.nhr *.nin *.nsq 2>/dev/null`;

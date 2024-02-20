@@ -7,9 +7,9 @@
 
    * [Introduction](#introduction)
    * [Installation](#installation)
-      * [Quick installation using conda](#quick-installation-using-conda-linux64)
-      * [Quick installation using Singularity](#quick-installation-using-singularity-good-for-hpc-users)
-      * [Quick installation using Docker](#quick-installation-using-docker-good-for-rootmac-users)
+      * [Quick installation using conda/mamba](#install-with-condamamba-linux64)
+      * [Quick installation using Singularity](#install-with-singularity-good-for-hpc-users)
+      * [Quick installation using Docker](#install-with-docker-good-for-rootmacosapple-m-chip-users)
    * [Testing](#testing)
    * [Inputs](#inputs)
    * [Outputs](#outputs)
@@ -32,49 +32,43 @@ The EDTA package was designed to filter out false discoveries in raw TE candidat
 
 <img width="600" alt="The EDTA workflow" src="https://github.com/oushujun/EDTA/blob/master/development/EDTA%20workflow.png?raw=true">
 
-To benchmark the annotation quality of a new library/method, I have provided the curated TE annotation (v6.9.5) for the rice genome (TIGR7/MSU7 version). You may use the `lib-test.pl` script to compare the annotation performance of your method/library to the methods we have tested (usage shown below).
+To benchmark the annotation quality of a new library/method, I have provided the TE annotation with the curated rice TE library (v7.0.0) for the rice genome (TIGR7/MSU7 version). You may use the `lib-test.pl` script to compare the annotation performance of your method/library to the methods we have tested (usage shown below).
 
 For pan-genome annotations, you need to annotate each genome with EDTA, generate a pan-genome library, then reannotate each genome with the pan-genome library. Please refer to this [example](https://github.com/HuffordLab/NAM-genomes/tree/master/te-annotation) for details. A sequential version of panEDTA is also included in this package. 
 
 
 ## Installation
 
-There are many ways to install EDTA. You just need to find the one that is working for your system. If you are not using macOS, you may try the conda appraoch before the Singularity apprapch.
+There are several ways to install EDTA. You just need to find the one that works for your system. If you are not using macOS, you may try the conda approach before the Singularity approach.
 
-### Quick installation using conda (Linux64)
+### Install with conda/[mamba](https://github.com/mamba-org/mamba) (Linux64)
+
+Recommend to ceate a dedicated environment for EDTA:
+
+```
+conda create -n EDTA
+conda activate EDTA
+mamba install -c conda-forge -c bioconda edta
+```
+
+<details>
+<summary>Other ways to install with conda/mamba...</summary>
+
+1. Install with the yml file:
 
 Download the latest EDTA:
 
 `git clone https://github.com/oushujun/EDTA.git`
 
-Find the yml file in the folder and run:
+Find the yml file in the EDTA folder and run:
 
-`conda env create -f EDTA_2.2.x.yml`
+`mamba env create -f EDTA_2.2.x.yml`
 
-The default `conda env` name is `EDTA` specified by the first line of the `EDTA.yml` file. You may change that to different names. Once the conda environment is set up, you can use it to drive other versions of EDTA. For example, if you have the EDTA v1.9.6 installed via conda, you may `git clone` the latest version, activate the v1.9.6 conda env, then specify the path to the freshly cloned EDTA to use it.
+The default `conda env` name is `EDTA2` specified by the first line of the yml file. You may change that to different names.
 
-<details>
-<summary>Other ways to install with conda...</summary>
-First, it is strongly recommended to ceate a dedicated environment for EDTA:
+2. Install by specifying all dependencies:
 
-```
-conda create -n EDTA
-conda activate EDTA
-```
-
-Then use the following ways to install EDTA. One successful way is sufficient.
-
-The 'simplest' and the slowest way (not recommended):
-
-`conda install -c bioconda -c conda-forge edta`
-
-More specifications help to find the right dependencies, and use [mamba](https://github.com/mamba-org/mamba) to acclerate the installation:
-
-`conda install -c conda-forge mamba`
-
-`mamba create -n EDTA2.6_v2 -c bioconda -c conda-forge -c r perl cd-hit repeatmodeler muscle mdust openjdk perl-text-soundex multiprocess regex tensorflow keras scikit-learn biopython pandas glob2 h5py python tesorter genericrepeatfinder genometools-genometools ltr_retriever ltr_finder coreutils blast==2.10.1 seqtk minimap2 swifter bedtools r-base r-ggplot2 r-dplyr r-tidyr r-here`
-
-`mamba install -c bioconda -c conda-forge 'h5py>3'`
+`mamba create -n EDTA2.2 -c conda-forge -c bioconda -c r annosine2 biopython blast cd-hit coreutils genericrepeatfinder genometools-genometools glob2 h5py==3.9 keras==2.11 ltr_finder ltr_retriever mdust multiprocess muscle openjdk pandas perl perl-text-soundex pyarrow python r-base r-dplyr regex repeatmodeler r-ggplot2 r-here r-tidyr scikit-learn swifter tensorflow==2.11 tesorter`
 
 </details>
 
@@ -84,16 +78,21 @@ conda activate EDTA
 perl EDTA.pl
 ```
 
-### Quick installation using [Singularity](https://sylabs.io/docs/) (good for HPC users)
-Installation:
+You can use the conda ENV to execute the latest EDTA from GitHub:
+```
+git clone https://github.com/oushujun/EDTA.git
+perl ./EDTA/EDTA/pl
+```
+
+### Install with [Singularity](https://sylabs.io/docs/) (good for HPC users)
  
 ```
 SINGULARITY_CACHEDIR=./
 export SINGULARITY_CACHEDIR
-singularity pull EDTA.sif docker://oushujun/edta:<tag>
+`singularity pull EDTA.sif docker://quay.io/biocontainers/edta:<tag>`
 ```
 
-Visit [dockerhub](https://hub.docker.com/r/oushujun/edta/tags) for a list of available tags (e.g., 2.0.0).
+Visit [BioContainers](https://quay.io/repository/biocontainers/edta?tab=tags) repository for a list of available tags (e.g., `2.2.0--hdfd78af_1`).
 
 Usage:
 
@@ -104,38 +103,17 @@ singularity exec {path}/EDTA.sif EDTA.pl --genome genome.fa [other parameters]
 
 Where `{path}` is the path you build the EDTA singularity image.
 
-### Quick installation using [Docker](https://www.docker.com/) (good for root/Mac users)
-Installation:
+### Install with [Docker](https://www.docker.com/) (good for root/macOS/Apple M-chip users)
 
-`docker pull docker://oushujun/edta:<tag>`
-
-Visit [dockerhub](https://hub.docker.com/r/oushujun/edta/tags) for a list of available tags (e.g., 2.0.0).
+`sudo docker pull quay.io/biocontainers/edta:<tag>`
 
 Usage:
 
-`docker run -v $PWD:/in -w /in biocontainers/edta:<tag> EDTA.pl --genome genome.fa [other parameters]`
+`sudo docker run -v $PWD:/in -w /in quay.io/biocontainers/edta:<tag> EDTA.pl --genome genome.fa [other parameters]`
 
-<details>
-<summary>Other container source...</summary>
+Visit [BioContainers](https://quay.io/repository/biocontainers/edta?tab=tags) repository for a list of available tags (e.g., `2.2.0--hdfd78af_1`).
 
-1. `singularity pull EDTA.sif docker://quay.io/biocontainers/edta:2.0.0`
-
-2. `docker pull quay.io/biocontainers/edta:2.0.0`
-
-Visit [BioContainers](https://quay.io/repository/biocontainers/edta?tab=tags) repository for a list of available tags (e.g., 2.0.0).
-
-3. Compile using your local docker with the Dockerfile in this package:
-
-`docker build ./EDTA/`
-</details>
-
-<details>
-<summary>Some downsides of using containers...</summary>
-
-1. It is tricky (for me) to specify files with a path to run EDTA. Softlinked files are considered "with path". So please copy all the files to your work directory to run Singularity/docker containers of EDTA.
-
-2. Similarily, it is tricky to specify paths to dependency programs (i.e., repeatmasker, repeatmodeler).
-</details>
+Note: Because only the current directory is mounted to the EDTA docker container, you have to copy all needed files to the current directory and provide them to EDTA without path specifications. Even providing the absolute path to the file located in this folder won't work. Softlinked files are considered "with path" and won't work. Similarily, specifying your own versions of dependency programs (i.e., repeatmasker, repeatmodeler) won't work because they have paths.
 
 
 ## Testing
@@ -159,17 +137,17 @@ Optional:
 
 
 ## Outputs
-A non-redundant TE library: $genome.mod.EDTA.TElib.fa. The curated library will be included in this file if provided. The [rice library](./database/rice6.9.5.liban) will be (partially) included if `--force 1` is specified. TEs are classified into the superfamily level and using the three-letter naming system reported in [Wicker et al. (2007)](https://www.nature.com/articles/nrg2165). Each sequence can be considered as a TE family. To convert between classification systems, please refer to the [TE sequence ontology file](./util/TE_Sequence_Ontology.txt).
+A non-redundant TE library: $genome.mod.EDTA.TElib.fa. The curated library will be included in this file if provided. The [rice library](./database/rice7.0.0.liban) will be (partially) included if `--force 1` is specified. TEs are classified into the superfamily level and using the three-letter naming system reported in [Wicker et al. (2007)](https://www.nature.com/articles/nrg2165). Each sequence can be considered as a TE family. To convert between classification systems, please refer to the [TE sequence ontology file](./util/TE_Sequence_Ontology.txt).
 
 Optional 1:
 1. Novel TE families: $genome.mod.EDTA.TElib.novel.fa. This file contains TE sequences that are not included in the curated library (`--curatedlib` required).
 
-Optional 2, when you specify the `--anno 1` parameter, you will get:
-2. Whole-genome TE annotation: $genome.mod.EDTA.TEanno.gff3. This file contains both structurally intact and fragmented TE annotations.
-3. Summary of whole-genome TE annotation: $genome.mod.EDTA.TEanno.sum.
-4. Low-threshold TE masking: $genome.mod.MAKER.masked. This is a genome file with only long TEs (>=1 kb) being masked. You may use this for de novo gene annotations. In practice, this approach will reduce overmasking for genic regions, which can improve gene prediction quality. However, initial gene models should contain TEs and need further filtering.
-5. Annotation inconsistency for simple TEs: $genome.mod.EDTA.TE.fa.stat.redun.sum.
-6. Annotation inconsistency for nested TEs: $genome.mod.EDTA.TE.fa.stat.nested.sum.
+Optional 2, when you specify the `--anno 1` parameter, you will get:  
+2. Whole-genome TE annotation: $genome.mod.EDTA.TEanno.gff3. This file contains both structurally intact and fragmented TE annotations.  
+3. Summary of whole-genome TE annotation: $genome.mod.EDTA.TEanno.sum.   
+4. Low-threshold TE masking: $genome.mod.MAKER.masked. This is a genome file with only long TEs (>=1 kb) being masked. You may use this for de novo gene annotations. In practice, this approach will reduce overmasking for genic regions, which can improve gene prediction quality. However, initial gene models should contain TEs and need further filtering.   
+5. Annotation inconsistency for simple TEs: $genome.mod.EDTA.TE.fa.stat.redun.sum.  
+6. Annotation inconsistency for nested TEs: $genome.mod.EDTA.TE.fa.stat.nested.sum.   
 7. Oveall annotation inconsistency: $genome.mod.EDTA.TE.fa.stat.all.sum.
 
 
@@ -225,7 +203,7 @@ Optional 2, when you specify the `--anno 1` parameter, you will get:
 
 ### Protips and self-diagnosis
 1. It's never said enough. You should tidy up all your sequence names before ANY analysis. Keep them short, simple, and unique.
-2. If your run has no errors but stuck at the TIR step for days, try to rerun with more memory. This step takes more memory than others.
+2. Run it in a fast drive (i.e., SSD) because RepeatMasker/RepeatModeler is I/O intense.
 3. Check out the [Wiki page](https://github.com/oushujun/EDTA/wiki) for more information and frequently asked questions.
 
 ## panEDTA usage
@@ -268,7 +246,7 @@ If you developed a new TE method/got a TE library and want to compare it's annot
 
 eg.
 
-    perl lib-test.pl -genome rice_genome.fasta -std ./EDTA/database/Rice_MSU7.fasta.std6.9.5.out -tst rice_genome.fasta.test.out -cat LTR
+    perl lib-test.pl -genome rice_genome.fasta -std ./EDTA/database/Rice_MSU7.fasta.std7.0.0.out -tst rice_genome.fasta.test.out -cat LTR
 
 Note: the -std and -tst files should be named differently even they are placed in different folders.
 
