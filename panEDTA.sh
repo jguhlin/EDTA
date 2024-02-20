@@ -5,6 +5,7 @@
 #	2. Individual TE libraries will be combined by panEDTA
 #	3. Each genome will be reannotated by the panEDTA library
 # Shujun Ou (shujun.ou.1@gmail.com) 
+# 02/19/2024 v0.3
 # 06/21/2023 v0.2
 # 10/10/2022 v0.1
 
@@ -23,7 +24,7 @@
 helpFunction()
 {
    echo "\nPan-genome annnotation of TEs using EDTA"
-   echo "Usage: bash $0 -g genome_list.txt -c cds.fasta -t 10"
+   echo "Usage: sh $0 -g genome_list.txt -c cds.fasta -t 10"
    echo "   -g	A list of genome files with paths accessible from the working directory.
 			Required: You can provide only a list of genomes in this file (one column, one genome each row).
 			Option 1: You can also provide both genomes and CDS files in this file (two columns, one genome and 
@@ -96,7 +97,11 @@ outfile=$(basename $genome_list 2>/dev/null)
 
 ### Begin panEDTA and print all parameters
 printf "\n%s\n" "$(date)"
-echo "Pan-genome Extensive de-novo TE Annotator (panEDTA)"
+echo "###############################################################"
+echo "##### Pan-genome Extensive de-novo TE Annotator (panEDTA) #####"
+echo "##### Shujun Ou (shujun.ou.1@gmail.com)                   #####"
+echo "###############################################################"
+echo ""
 echo "   Output directory: $dir"
 echo "   Genome files: $genome_list"
 echo "   Coding sequences: $cds"
@@ -159,7 +164,8 @@ while IFS= read -r i; do
 
 
 	# check if current folder has EDTA results
-	if [ `realpath "$genome_file.mod.EDTA.TEanno.sum"` = `realpath "$genome.mod.EDTA.TEanno.sum"` ] && [ $overwrite = 0 ]; then
+	#if [ -s "$genome_file.mod.EDTA.TEanno.sum" || -s "$genome.mod.EDTA.TEanno.sum"] && [ `realpath "$genome_file.mod.EDTA.TEanno.sum"` = `realpath "$genome.mod.EDTA.TEanno.sum"` ] && [ $overwrite = 0 ]; then
+	if { [ -s "$genome_file.mod.EDTA.TEanno.sum" ] || [ -s "$genome.mod.EDTA.TEanno.sum" ]; } && [ "$(realpath "$genome_file.mod.EDTA.TEanno.sum")" = "$(realpath "$genome.mod.EDTA.TEanno.sum")" ] && [ "$overwrite" = 0 ]; then
 		echo "ERROR: Existing EDTA result found for $genome and the Overwrite parameter (-o) is $overwrite!"
 		exit 1
 	fi
@@ -173,10 +179,11 @@ while IFS= read -r i; do
 		ln -s "$genome_file.mod.EDTA.TElib.novel.fa" "$genome.mod.EDTA.TElib.novel.fa" 2>/dev/null
 		mkdir "$genome.mod.EDTA.raw" 2>/dev/null
 		ln -s "$genome_file.mod.EDTA.raw/$genome.mod.RM2.fa" "$genome.mod.EDTA.raw/" 2>/dev/null
-		ln -s "$genome_file.mod.EDTA.raw/$genome.mod.EDTA.intact.fa" "$genome.mod.EDTA.raw/" 2>/dev/null
-		ln -s "$genome_file.mod.EDTA.raw/$genome.mod.EDTA.intact.gff3" "$genome.mod.EDTA.raw/" 2>/dev/null
+		ln -s "$genome_file.mod.EDTA.raw/$genome.mod.EDTA.intact.raw.fa" "$genome.mod.EDTA.raw/" 2>/dev/null
+		ln -s "$genome_file.mod.EDTA.raw/$genome.mod.EDTA.intact.raw.gff3" "$genome.mod.EDTA.raw/" 2>/dev/null
 		mkdir "$genome.mod.EDTA.combine" 2>/dev/null
 		ln -s "$genome_file.mod.EDTA.combine/$genome.mod.EDTA.fa.stg1" "$genome.mod.EDTA.combine/" 2>/dev/null
+		ln -s "$genome_file.mod.EDTA.combine/$genome.mod.EDTA.intact.fa.cln" "$genome.mod.EDTA.combine/" 2>/dev/null
 
 		mkdir "$genome.mod.EDTA.anno" 2>/dev/null
 		ln -s "$genome_file.mod.EDTA.anno/$genome.mod.EDTA.RM.out" "$genome.mod.EDTA.anno/" 2>/dev/null
@@ -222,29 +229,16 @@ for genome in $genomes; do
 	if [ -s "$curatedlib" ]; then
 		# a) if --curatedlib is provided
 		for j in $(cat "$genome.mod.EDTA.TElib.fa.keep.list"); do
-#		cat "$genome.mod.EDTA.TElib.fa.keep.list" | while read -r j; do
 			grep "$j" "$genome.mod.EDTA.TElib.novel.fa"; 
 		done | \
 			perl "$path/util/output_by_list.pl" 1 "$genome.mod.EDTA.TElib.novel.fa" 1 - -FA > "$genome.mod.EDTA.TElib.fa.keep.ori"
 
-#		while read -r j; do
-#			grep "$j" "$genome.mod.EDTA.TElib.novel.fa";
-#		done < "$genome.mod.EDTA.TElib.fa.keep.list" | \
-#			perl "$path/util/output_by_list.pl" 1 "$genome.mod.EDTA.TElib.novel.fa" 1 - -FA > "$genome.mod.EDTA.TElib.fa.keep.ori"
-
 	else
 		# b) if --curatedlib is not provided
-	#	for j in $(cat "$genome.mod.EDTA.TElib.fa.keep.list"); do 
 		for j in `cat "$genome.mod.EDTA.TElib.fa.keep.list"`; do 
-	#	cat "$genome.mod.EDTA.TElib.fa.keep.list" | while read -r j; do
 			grep "$j" "$genome.mod.EDTA.TElib.fa"; 
 		done | \
         		perl "$path/util/output_by_list.pl" 1 "$genome.mod.EDTA.TElib.fa" 1 - -FA > "$genome.mod.EDTA.TElib.fa.keep.ori"
-
-#		while read -r j; do
-#			grep "$j" "$genome.mod.EDTA.TElib.fa";
-#		done < "$genome.mod.EDTA.TElib.fa.keep.list" | \
-#			perl "$path/util/output_by_list.pl" 1 "$genome.mod.EDTA.TElib.fa" 1 - -FA > "$genome.mod.EDTA.TElib.fa.keep.ori"
 
 	fi
 done
@@ -267,7 +261,6 @@ if [ -s "$curatedlib" ]; then
 fi
 printf "\n%s\n" "$(date)"
 printf "\tpanEDTA library of %s is generated: %s.panEDTA.TElib.fa\n" "$genome_list" "$outfile"
-#printf "\tPan-genome library: %s.panEDTA.TElib.fa\n" "$outfile"
 
 ## Step 3, re-annotate all genomes with the panEDTA library, consider to submit each RepeatMasker and EDTA job to different nodes.
 if [ "$anno" = '1' ]; then
@@ -295,7 +288,7 @@ while IFS= read -r i; do
                 cds_ind=$cds
         fi
 
-	echo "Reannotate genome $genome with the panEDTA library - structural"
+	printf "\n%s\nReannotate genome %s with the panEDTA library - structural\n" "$(date)" $genome
 	perl $path/EDTA.pl --genome $genome -t $threads --step final --anno 1 --curatedlib $genome_list.panEDTA.TElib.fa --cds $cds_ind --rmout $genome.mod.panEDTA.out
 done < $genome_list
 

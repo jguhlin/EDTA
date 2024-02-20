@@ -32,11 +32,11 @@ library(tidyr)
 library(dplyr)
 library(ggplot2)
 library(scales)
-library(here)
+#library(here)
 
 # Set the working directory to the script's location
 script_dir <- dirname(Sys.getenv("R_SCRIPT"))
-setwd(here())
+#setwd(here())
 
 data_file <- args[1]  # Data file name (e.g., 'testmaize.txt')
 species_accession <- args[2]  # Species accession label (e.g., 'Maize_B73')
@@ -69,7 +69,7 @@ genome_label <- paste(species_accession, " (", formatted_genome_size, " Mb)", se
 output_file_name <- paste(species_accession, "_divergence_plot.pdf", sep="")
 
 # Start PDF output
-pdf(file = output_file_name)
+pdf(file = output_file_name, width = 6, height = 4)
 
 # Plot TE divergence
 div_p <- long_div %>%
