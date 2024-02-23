@@ -5,7 +5,7 @@ process scan {
         val(type)
         val(rc)
     output:
-        path("${genome.baseName}.HelitronScanner${rc ? '.rc' : ''}.${type == 'Head' ? 'head' : 'tail'}")
+        tuple val("${genome.baseName}"), path("${genome.baseName}.HelitronScanner${rc ? '.rc' : ''}.${type == 'Head' ? 'head' : 'tail'}")
     cpus 1
     time '18h'
     memory 150.GB
@@ -30,7 +30,7 @@ process pairEndsDraw {
         path(tail)
         val(rc)
     output:
-        path("${genome.baseName}.HelitronScanner${rc ? '.rc' : ''}.draw")
+        tuple val("${genome.baseName}"), path("${genome.baseName}.HelitronScanner${rc ? '.rc' : ''}.draw")
     cpus 1
     time '6h'
     memory 32.GB
