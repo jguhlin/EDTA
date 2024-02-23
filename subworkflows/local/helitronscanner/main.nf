@@ -61,7 +61,7 @@ process helitron_scanner {
         path(genome)
     output:
         path("${genome.baseName}.Helitron.intact.raw.gff3")
-    conda 'bioconda::tesorter bioconda::mdust bioconda::trf'
+    conda 'bioconda::tesorter  bioconda::trf'
     cpus 1 
     time '18h'
     memory 32.GB
@@ -94,7 +94,8 @@ perl ${projectDir}/util/output_by_list.pl 1 \
     ${genome}.HelitronScanner.filtered.ext.fa \
     -FA > ${genome}.HelitronScanner.filtered.pass.fa
 
-mdust ${genome}.HelitronScanner.filtered.pass.fa > ${genome}.HelitronScanner.filtered.fa.pass.fa.dusted
+# Now a subworkflow
+# mdust ${genome}.HelitronScanner.filtered.pass.fa > ${genome}.HelitronScanner.filtered.fa.pass.fa.dusted
 perl ${projectDir}/util/cleanup_tandem.pl \
     -misschar N \
     -nc 50000 \
