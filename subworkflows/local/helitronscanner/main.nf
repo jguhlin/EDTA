@@ -3,7 +3,7 @@ process scan {
     input:
         val(data)
     output:
-        path("${data.name}.HelitronScanner${rc ? '.rc' : ''}.${type == 'Head' ? 'head' : 'tail'}")
+        tuple val("${genome.baseName}"), path("${genome.baseName}.HelitronScanner${rc ? '.rc' : ''}.${type == 'Head' ? 'head' : 'tail'}")
     cpus 1
     time '18h'
     memory 150.GB
@@ -28,7 +28,7 @@ process pairEndsDraw {
         path(tail)
         val(rc)
     output:
-        path("${data.name}.HelitronScanner${rc ? '.rc' : ''}.draw")
+        tuple val("${genome.baseName}"), path("${genome.baseName}.HelitronScanner${rc ? '.rc' : ''}.draw")
     cpus 1
     time '6h'
     memory 32.GB
@@ -58,8 +58,8 @@ process helitron_scanner {
     input:
         path(genome)
     output:
-        path("${data.name}.Helitron.intact.raw.gff3")
-    conda 'bioconda::tesorter bioconda::mdust bioconda::trf'
+        path("${genome.baseName}.Helitron.intact.raw.gff3")
+    conda 'bioconda::tesorter  bioconda::trf'
     cpus 1 
     time '18h'
     memory 32.GB
@@ -92,7 +92,8 @@ perl ${projectDir}/util/output_by_list.pl 1 \
     ${genome}.HelitronScanner.filtered.ext.fa \
     -FA > ${genome}.HelitronScanner.filtered.pass.fa
 
-mdust ${genome}.HelitronScanner.filtered.pass.fa > ${genome}.HelitronScanner.filtered.fa.pass.fa.dusted
+# Now a subworkflow
+# mdust ${genome}.HelitronScanner.filtered.pass.fa > ${genome}.HelitronScanner.filtered.fa.pass.fa.dusted
 perl ${projectDir}/util/cleanup_tandem.pl \
     -misschar N \
     -nc 50000 \
