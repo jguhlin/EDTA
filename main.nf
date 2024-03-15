@@ -42,7 +42,7 @@ process sanitize {
     input:
         path x
     output:
-        tuple path("${x.baseName}_sanitized.fasta"), path("${x.baseName}_sanitized.translation_table.tsv")
+        tuple val("${x.baseName}"), path("${x.baseName}_sanitized.fasta"), path("${x.baseName}_sanitized.translation_table.tsv")
     publishDir 'sanitized_genomes'
     time "10m"
     memory 3.GB
@@ -51,118 +51,6 @@ process sanitize {
 """
 fffx length-filter ${x} filtered.fa 1000
 fffx sanitize filtered.fa ${x.baseName}_sanitized
-"""
-}
-
-process repeatmodeler {
-    tag "${genome.baseName}"
-    input:
-        path(genome)
-    output:
-        tuple path("${genome.baseName}.LINE.raw.fa"), path("${genome.baseName}.RM2.fa"), path("${genome.baseName}.RM2.raw.fa")
-    conda 'bioconda::repeatmodeler=2.0.2a=pl5262h9ee0642_0 tesorter=1.4.6=pyhdfd78af_0'
-    cpus 32
-    time '6d'
-    memory 32.GB
-    publishDir 'out_repeatmodeler'
-
-shell:
-'''
-BuildDatabase -name !{genome.baseName} !{genome}
-RepeatModeler -engine ncbi -threads !{task.cpus} -database !{genome.baseName}
-
-awk '{print \$1}' !{genome.baseName}-families.fa > !{genome.baseName}.RM2.raw.fa
-TEsorter !{genome.baseName}.RM2.raw.fa --disable-pass2 -p !{task.cpus}
-
-perl !{projectDir}/util/cleanup_misclas.pl !{genome.baseName}.RM2.raw.fa.rexdb.cls.tsv
-
-TEsorter !{genome.baseName}.RM2.raw.fa.cln --disable-pass2 -p !{task.cpus}
-perl -nle 's/>\\S+\\s+/>/; print \$_' !{genome.baseName}.RM2.raw.fa.cln.rexdb.cls.lib > !{genome.baseName}.RM2.raw.fa.cln
-
-perl !{projectDir}/util/cleanup_tandem.pl -misschar N \
-    -nc 50000 \
-    -nr 0.9 \
-    -minlen 80 \
-    -minscore 3000 \
-    -trf 1 \
-    -cleanN 1 \
-    -cleanT 1 \
-    -f !{genome.baseName}.RM2.raw.fa.cln > !{genome.baseName}.RM2.raw.fa.cln2
-
-grep -P 'LINE|SINE' !{genome.baseName}.RM2.raw.fa.cln2 | perl !{projectDir}/util/output_by_list.pl 1 !{genome.baseName}.RM2.raw.fa.cln2 1 - -FA > !{genome.baseName}.LINE.raw.fa
-grep -P 'LINE|SINE' !{genome.baseName}.RM2.raw.fa.cln2 | perl !{projectDir}/util/output_by_list.pl 1 !{genome.baseName}.RM2.raw.fa.cln2 1 - -FA -ex > !{genome.baseName}.RM2.fa
-'''
-}
-
-process tir_learner {
-    tag "${genome.baseName}"
-    input:
-        path(genome)
-    output:
-        tuple path("${genome.baseName}.TIR.intact.fa"), path("${genome.baseName}.TIR.intact.raw.fa"), path("${genome.baseName}.TIR.intact.raw.gff3")
-    cpus 16
-    memory 16.GB
-    time '12h'
-    conda 'python=3.10 bioconda::genometools-genometools bioconda::genericrepeatfinder bioconda::cd-hit bioconda::mdust bioconda::tesorter blast pandas swifter regex scikit-learn tensorflow bioconda::trf'
-    publishDir 'out_tir_learner'
-
-"""
-python3 ${projectDir}/bin/TIR-Learner3.0/TIR-Learner3.0.py \
-    -f ${genome} \
-    -s ${params.species} \
-    -t ${task.cpus} \
-    -l ${params.maxint} \
-    -o ${genome.baseName}.TIR
-
-cd ${genome.baseName}.TIR
-
-perl ${projectDir}/util/rename_tirlearner.pl \
-    ./TIR-Learner-Result/TIR-Learner_FinalAnn.fa | perl -nle 's/TIR-Learner_//g; print \$_' > ${genome.baseName}.TIR
-
-perl ${projectDir}/util/get_ext_seq.pl ../${genome} ${genome.baseName}.TIR
-perl ${projectDir}/util/flanking_filter.pl \
-    -genome ../${genome} \
-    -query ${genome.baseName}.TIR.ext30.fa \
-    -miniden 90 \
-    -mincov 0.9 \
-    -maxct 20 \
-    -t ${task.cpus} \
-
-perl ${projectDir}/util/output_by_list.pl 1 \
-    ${genome.baseName}.TIR \
-    1 \
-    ${genome.baseName}.TIR.ext30.fa.pass.fa \
-    -FA -MSU0 -MSU1 \
-    > ${genome.baseName}.TIR.ext30.fa.pass.fa.ori
-
-# remove simple repeats and candidates with simple repeats at terminals
-mdust ${genome.baseName}.TIR.ext30.fa.pass.fa.ori > ${genome.baseName}.TIR.ext30.fa.pass.fa.dusted
-perl ${projectDir}/util/cleanup_tandem.pl \
-    -misschar N \
-    -nc 50000 \
-    -nr 0.9 \
-    -minlen 80 \
-    -minscore 3000 \
-    -trf 1 \
-    -cleanN 1 \
-    -cleanT 1 \
-    -f ${genome.baseName}.TIR.ext30.fa.pass.fa.dusted > ${genome.baseName}.TIR.ext30.fa.pass.fa.dusted.cln
-
-# annotate and remove non-TIR candidates
-TEsorter ${genome.baseName}.TIR.ext30.fa.pass.fa.dusted.cln --disable-pass2 -p ${task.cpus}
-perl ${projectDir}/util/cleanup_misclas.pl \
-    ${genome.baseName}.TIR.ext30.fa.pass.fa.dusted.cln.rexdb.cls.tsv
-mv ${genome.baseName}.TIR.ext30.fa.pass.fa.dusted.cln.cln ../${genome.baseName}.TIR.intact.raw.fa
-cp ${genome.baseName}.TIR.ext30.fa.pass.fa.dusted.cln.cln.list ../${genome.baseName}.TIR.intact.raw.fa.anno.list
-
-# get gff3 of intact TIR elements
-perl -nle 's/\\\\-\\\\+\\\\-/_Len:/; my (\$chr, \$method, \$supfam, \$s, \$e, \$anno) = (split)[0,1,2,3,4,8]; my \$class=\"DNA\"; \$class=\"MITE\" if \$e-\$s+1 <= 600; my (\$tir, \$iden, \$tsd)=(\$1, \$2/100, \$3) if \$anno=~/TIR:(.*)_([0-9.]+)_TSD:([a-z0-9._]+)_LEN/i; print \"\$chr \$s \$e \$chr:\$s..\$e \$class/\$supfam structural \$iden . . . TSD=\$tsd;TIR=\$tir\"' ./TIR-Learner-Result/TIR-Learner_FinalAnn.gff3 |\
-    perl ${projectDir}/util/output_by_list.pl 4 - 1 \
-    ../${genome.baseName}.TIR.intact.raw.fa -MSU0 -MSU1 \
-    > ${genome.baseName}.TIR.intact.raw.bed
-
-perl ${projectDir}/util/bed2gff.pl ${genome.baseName}.TIR.intact.raw.bed TIR > ../${genome.baseName}.TIR.intact.raw.gff3
-cp ../${genome.baseName}.TIR.intact.raw.fa ../${genome.baseName}.TIR.intact.fa
 """
 }
 
@@ -243,22 +131,45 @@ include { LTR_HARVEST   } from './subworkflows/local/ltr_harvest'
 include { LTR_FINDER    } from './subworkflows/local/ltr_finder'
 include { LTR_RETRIEVER } from './subworkflows/local/ltr_retriever'
 include { ANNOSINE      } from './subworkflows/local/annosine'
+include { REPEATMODELER } from './subworkflows/local/repeatmodeler'
+include { TIRLEARNER    } from './subworkflows/local/tir_learner'
 
 workflow {
     genomes = channel.fromPath(params.genomes + "/*")
     sanitize(genomes)
  
-    // Get first element of each tuple
-    sanitized_genomes = sanitize.out.map({ it[0] })
+
+    // Handy for data control
+    genomes_all = sanitize.out.map({ it ->
+        tuple(it[0], ["name": it[0], "assembly": it[1], "translation_table": it[2]], it[1])
+    })
+
+    genomes_input = sanitize.out.map({ it ->
+        tuple(["name": it[0], "assembly": it[1], "translation_table": it[2]], it[1])
+    })
+
+    genomes_files = sanitize.out.map({ it ->
+        tuple(it[0], it[1])
+    })
+    
+    // Input for (nearly all) functions are going to be the map "data"
+    // Output will be a tuple (data.name, output_file)
+    // So we can merge them all later using data.name
+
+    // The map has the folliwing features:
+    // - name: The name of the genome
+    // - assembly: The sanitized genome
+    // - translation_table: The translation table for the genome
 
     // These two feed into ltr_retriever (but the first two run in parallel)
-    LTR_HARVEST(sanitized_genomes)
-    LTR_FINDER(sanitized_genomes)
-    LTR_RETRIEVER(sanitized_genomes, LTR_HARVEST.out.ltrs, LTR_FINDER.out.ltrs)
+    LTR_HARVEST(genomes_input)
+    LTR_FINDER(genomes_input)
+    LTR_HARVEST.out.join(LTR_FINDER.out).join(genomes_files).set { ltr_retriever_input }
+    LTR_RETRIEVER(ltr_retriever_input)
 
     // These can also run in parallel
-    ANNOSINE(sanitized_genomes)
-    repeatmodeler(sanitized_genomes)
-    tir_learner(sanitized_genomes)
-    helitron_scanner(sanitized_genomes)
+    ANNOSINE(genomes_input)
+    REPEATMODELER(genomes_input)
+    TIRLEARNER(genomes_input)
+    // helitron_scanner(sanitized_genomes)
 }

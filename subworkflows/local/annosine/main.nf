@@ -1,9 +1,9 @@
-process annosine {
-    tag "${genome.baseName}"
+process execute {
+    tag "${data.name}"
     input:
-        path(genome)
+        tuple val(data), path(assembly)
     output:
-        path("${genome.baseName}.SINE.raw.fa")
+        tuple val(data.name), path("${data.name}.SINE.raw.fa")
     conda 'python=3.10 bioconda::annosine2 bioconda::tesorter biopython'
     cpus 8
     memory 16.GB
@@ -12,7 +12,6 @@ process annosine {
 
 shell:
 '''
-
 touch Seed_SINE.fa
 
 AnnoSINE_v2 -t !{task.cpus} \
@@ -21,13 +20,13 @@ AnnoSINE_v2 -t !{task.cpus} \
   -rpm 0 \
   --copy_number 3 \
   --shift 100 \
-  -auto 1 3 !{genome} .
+  -auto 1 3 !{data.assembly} .
 
   if [ -s "Seed_SINE.fa" ]; then
-    awk '{print \$1}' Seed_SINE.fa > !{genome.baseName}.AnnoSINE.raw.fa
-    TEsorter !{genome.baseName}.AnnoSINE.raw.fa --disable-pass2 -p !{task.cpus}
-    touch !{genome.baseName}.AnnoSINE.raw.fa.rexdb.cls.tsv
-    perl !{projectDir}/util/cleanup_misclas.pl !{genome.baseName}.AnnoSINE.raw.fa.rexdb.cls.tsv
+    awk '{print \$1}' Seed_SINE.fa > !{data.name}.AnnoSINE.raw.fa
+    TEsorter !{data.name}.AnnoSINE.raw.fa --disable-pass2 -p !{task.cpus}
+    touch !{data.name}.AnnoSINE.raw.fa.rexdb.cls.tsv
+    perl !{projectDir}/util/cleanup_misclas.pl !{data.name}.AnnoSINE.raw.fa.rexdb.cls.tsv
 
     perl !{projectDir}/util/cleanup_tandem.pl -misschar N \
         -nc 50000 \
@@ -37,18 +36,21 @@ AnnoSINE_v2 -t !{task.cpus} \
         -trf 1 \
         -cleanN 1 \
         -cleanT 1 \
-        -f !{genome.baseName}.AnnoSINE.raw.fa.cln > !{genome.baseName}.SINE.raw.fa
+        -f !{data.name}.AnnoSINE.raw.fa.cln > !{data.name}.SINE.raw.fa
     else
-        touch !{genome.baseName}.SINE.raw.fa
+        touch !{data.name}.SINE.raw.fa
     fi
 
 '''
 }
 
-workflow {
+workflow ANNOSINE {
     take:
-        genome
+        genomes
 
     main:
-        annosine(genome)
+        genomes | execute
+
+    emit:
+        execute.out
 }

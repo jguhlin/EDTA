@@ -1,9 +1,9 @@
 process execute {
-    tag "${genome.baseName}"
+    tag "${data.name}"
     input:
-        path(genome)
+        tuple val(data), path(assembly)
     output:
-        path("${genome}.harvest.combine.scn")
+        tuple val(data.name), path("${assembly}.harvest.combine.scn")
     conda 'bioconda::genometools-genometools'
     cpus 8
     memory 8.GB
@@ -11,7 +11,7 @@ process execute {
     publishDir 'out_ltr_harvest'
 """
 perl ${projectDir}/bin/LTR_HARVEST_parallel/LTR_HARVEST_parallel \
-    -seq ${genome} \
+    -seq ${assembly} \
     -threads ${task.cpus} \
     -size 10000000 \
     -time 300
@@ -20,10 +20,10 @@ perl ${projectDir}/bin/LTR_HARVEST_parallel/LTR_HARVEST_parallel \
 
 workflow LTR_HARVEST {
     take:
-        genomes
+        data
     
     main:
-        execute(genomes)
+        execute(data)       
     
     emit: 
         ltrs = execute.out

@@ -7,18 +7,18 @@ annotator = "LTR_FINDER_parallel_nf"
 // TODO: Rustize LTR_FINDER_parallel
 
 process execute {
-    tag "${genome.baseName}"
+    tag "${data.name}"
     input:
-        path(genome)
+        tuple val(data), path(assembly)
     output:
-        path("${genome}.finder.combine.scn")
+        tuple val(data.name), path("${assembly}.finder.combine.scn")
     cpus 8
     memory 8.GB
     time '18h'
     publishDir 'out_ltr_finder'
 """
 perl ${projectDir}/bin/LTR_FINDER_parallel/LTR_FINDER_parallel \
-    -seq ${genome} \
+    -seq ${assembly} \
     -threads ${task.cpus} \
     -harvest_out \
     -size 10000000 \
@@ -31,8 +31,8 @@ workflow LTR_FINDER {
         genomes
     
     main:
-        execute(genomes)
+        genomes | execute
     
     emit: 
-        ltrs = execute.out
+        execute.out
 }

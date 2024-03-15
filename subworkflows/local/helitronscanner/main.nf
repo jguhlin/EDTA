@@ -1,11 +1,9 @@
 process scan {
-    tag "HelitronScanner-${genome.baseName}"
+    tag "HelitronScanner-${data.name}"
     input:
-        path(genome)
-        val(type)
-        val(rc)
+        val(data)
     output:
-        path("${genome.baseName}.HelitronScanner${rc ? '.rc' : ''}.${type == 'Head' ? 'head' : 'tail'}")
+        path("${data.name}.HelitronScanner${rc ? '.rc' : ''}.${type == 'Head' ? 'head' : 'tail'}")
     cpus 1
     time '18h'
     memory 150.GB
@@ -17,9 +15,9 @@ java -Xmx${task.memory.giga} \
     scan${type} \
     ${rc ? '--rc' : ''} \
     -lcv_filepath ${workflow.projectDir}/bin/HelitronScanner/TrainingSet/head.lcvs \
-    -g $genome \
+    -g ${data.assembly} \
     -buffer_size 0 \
-    -output ${genome.baseName}.HelitronScanner.${rc ? '.rc' : ''}.${type == 'Head' ? 'head' : 'tail'}
+    -output ${data.name}.HelitronScanner.${rc ? '.rc' : ''}.${type == 'Head' ? 'head' : 'tail'}
 """
 }
 
@@ -30,7 +28,7 @@ process pairEndsDraw {
         path(tail)
         val(rc)
     output:
-        path("${genome.baseName}.HelitronScanner${rc ? '.rc' : ''}.draw")
+        path("${data.name}.HelitronScanner${rc ? '.rc' : ''}.draw")
     cpus 1
     time '6h'
     memory 32.GB
@@ -49,18 +47,18 @@ java -Xmx${task.memory.giga} \
     draw \
     -pscore pairends \
     -g ${genome} \
-    -output ${genome.baseName}.HelitronScanner${rc ? '.rc' : ''}.draw \
+    -output ${data.name}.HelitronScanner${rc ? '.rc' : ''}.draw \
     -pure_helitron
 
 """
 }
 
 process helitron_scanner {
-    tag "${genome.baseName}"
+    tag "${data.name}"
     input:
         path(genome)
     output:
-        path("${genome.baseName}.Helitron.intact.raw.gff3")
+        path("${data.name}.Helitron.intact.raw.gff3")
     conda 'bioconda::tesorter bioconda::mdust bioconda::trf'
     cpus 1 
     time '18h'
@@ -115,13 +113,13 @@ TEsorter ${genome}.HelitronScanner.filtered.fa.pass.fa.dusted.cln \
 
 perl ${projectDir}/util/cleanup_misclas.pl \
     ${genome}.HelitronScanner.filtered.fa.pass.fa.dusted.cln.rexdb.cls.tsv
-mv ${genome}.HelitronScanner.filtered.fa.pass.fa.dusted.cln.cln ${genome.baseName}.Helitron.intact.raw.fa
-cp ${genome}.HelitronScanner.filtered.fa.pass.fa.dusted.cln.cln.list ${genome.baseName}.Helitron.intact.raw.fa.anno.list
+mv ${genome}.HelitronScanner.filtered.fa.pass.fa.dusted.cln.cln ${data.name}.Helitron.intact.raw.fa
+cp ${genome}.HelitronScanner.filtered.fa.pass.fa.dusted.cln.cln.list ${data.name}.Helitron.intact.raw.fa.anno.list
 
 # get intact Helitrons and gff3
 perl ${projectDir}/util/make_bed_with_intact.pl \
-    ${genome.baseName}.Helitron.intact.raw.fa > ${genome.baseName}.Helitron.intact.raw.bed
-perl ${projectDir}/util/bed2gff.pl ${genome.baseName}.Helitron.intact.raw.bed HEL > ${genome.baseName}.Helitron.intact.raw.gff3
+    ${data.name}.Helitron.intact.raw.fa > ${data.name}.Helitron.intact.raw.bed
+perl ${projectDir}/util/bed2gff.pl ${data.name}.Helitron.intact.raw.bed HEL > ${data.name}.Helitron.intact.raw.gff3
 """
 }
 
