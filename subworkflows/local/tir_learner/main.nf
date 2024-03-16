@@ -7,7 +7,7 @@ process tir_learner {
     cpus 8
     memory 8.GB
     time '6h'
-    conda 'python=3.10 bioconda::genometools-genometools bioconda::genericrepeatfinder bioconda::cd-hit bioconda::mdust bioconda::tesorter blast pandas swifter regex scikit-learn tensorflow bioconda::trf'
+    conda 'python=3.10 bioconda::genometools-genometools bioconda::genericrepeatfinder bioconda::cd-hit bioconda::mdust bioconda::tesorter blast pandas swifter regex scikit-learn tensorflow'
 
 """
 python3 ${projectDir}/bin/TIR-Learner3.0/TIR-Learner3.0.py \
@@ -28,7 +28,7 @@ process process_output {
     cpus 2
     memory 2.GB
     time '1h'
-    conda 'python=3.10 bioconda::genometools-genometools bioconda::genericrepeatfinder bioconda::cd-hit bioconda::mdust bioconda::tesorter blast pandas swifter regex scikit-learn tensorflow bioconda::trf'
+    conda 'python=3.10 bioconda::genometools-genometools bioconda::genericrepeatfinder bioconda::cd-hit bioconda::mdust bioconda::tesorter blast pandas regex bioconda::trf'
     publishDir 'out_tir_learner'
 
 """
