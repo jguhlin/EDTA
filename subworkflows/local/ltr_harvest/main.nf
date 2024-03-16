@@ -1,4 +1,4 @@
-process execute {
+process ltr_harvest {
     tag "${data.name}"
     input:
         tuple val(data), path(assembly)
@@ -23,8 +23,8 @@ workflow LTR_HARVEST {
         data
     
     main:
-        execute(data)       
+        data | ltr_harvest
     
     emit: 
-        ltrs = execute.out
+        ltr_harvest.out
 }

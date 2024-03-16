@@ -1,13 +1,13 @@
-process execute {
+process repeatmodeler {
     tag "${data.name}"
     input:
         tuple val(data), path(assembly)
     output:
         tuple val(data), path(assembly), path("${data.name}-families.fa")
     conda 'bioconda::repeatmodeler=2.0.5-0'
-    cpus 32
+    cpus 16
     time '6d'
-    memory 32.GB
+    memory 16.GB
 
 shell:
 '''
@@ -58,7 +58,7 @@ workflow REPEATMODELER {
         genomes
 
     main:
-        genomes | execute | process_output
+        genomes | repeatmodeler | process_output
 
     emit:
         process_output.out

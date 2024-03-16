@@ -1,12 +1,12 @@
-process execute {
+process tir_learner {
     tag "${data.name}"
     input:
         tuple val(data), path(assembly)
     output:
         tuple val(data), path(assembly), path("${data.name}.TIR")
-    cpus 16
-    memory 16.GB
-    time '12h'
+    cpus 8
+    memory 8.GB
+    time '6h'
     conda 'python=3.10 bioconda::genometools-genometools bioconda::genericrepeatfinder bioconda::cd-hit bioconda::mdust bioconda::tesorter blast pandas swifter regex scikit-learn tensorflow bioconda::trf'
 
 """
@@ -90,7 +90,7 @@ workflow TIRLEARNER {
         genomes
 
     main:
-        genomes | execute | process_output
+        genomes | tir_learner | process_output
 
     emit:
         process_output.out

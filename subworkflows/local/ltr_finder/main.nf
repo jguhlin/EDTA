@@ -6,14 +6,14 @@ params.params = "-w 2 -C -D 15000 -d 1000 -L 7000 -l 100 -p 20 -M 0.85"
 annotator = "LTR_FINDER_parallel_nf"
 // TODO: Rustize LTR_FINDER_parallel
 
-process execute {
+process ltr_finder {
     tag "${data.name}"
     input:
         tuple val(data), path(assembly)
     output:
         tuple val(data.name), path("${assembly}.finder.combine.scn")
-    cpus 8
-    memory 8.GB
+    cpus 4
+    memory 4.GB
     time '18h'
     publishDir 'out_ltr_finder'
 """
@@ -31,8 +31,8 @@ workflow LTR_FINDER {
         genomes
     
     main:
-        genomes | execute
+        genomes | ltr_finder
     
     emit: 
-        execute.out
+        ltr_finder.out
 }

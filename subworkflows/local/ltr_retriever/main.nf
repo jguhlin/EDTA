@@ -8,16 +8,16 @@
 params.u                = 1.3e-8
 
 // TODO: Perl and awk get a bit ugly in nextflow, move to a proper external script
-process execute {
+process ltr_retriever {
     tag "${name}"
     input:
         tuple val(name), path(harvest), path(finder), path(genome)
     output:
         tuple val(name), path("${genome.baseName}.pass.list"), optional: true
     conda 'bioconda::ltr_retriever'
-    cpus 8
-    memory 12.GB
-    time '8h'
+    cpus 4
+    memory 8.GB
+    time '4h'
     publishDir 'out_ltr_retriever'
 shell:
 """
@@ -86,7 +86,7 @@ workflow LTR_RETRIEVER {
         input
     
     main:
-        input | execute | process_output
+        input | ltr_retriever | process_output
 
     emit:
         process_output.out
