@@ -1,2 +1,17 @@
 bin/TIR-Learner*/Module3/Maize_model.sav
 *.pyc
+
+// NextFlow
+.nextflow*
+work/
+results/
+.DS_Store
+*.code-workspace
+.screenrc
+.*.sw?
+__pycache__
+*.pyo
+*.pyc
+
+*.stdout
+*.stderr

@@ -2,7 +2,8 @@
 
 nextflow.enable.dsl = 2
 
-params.genomes          = 'genomes'
+params.genomes          = 'genomes/*' // To allow for more flexibility when specifying params.
+// I'll be testing the whole pipeline with a single public chromosome from nf-core test datasets
 params.species          = 'others'
 params.cds              = ''
 params.curatedlib       = ''
@@ -16,6 +17,15 @@ params.exclude          = ''
 params.maxint           = 5000
 
 // TODO: Check parameters, also help
+// - We should at a later stage use [nf-validation](https://github.com/nextflow-io/nf-validation) and
+// nf-core pipeline [template](https://nf-co.re/docs/contributing/adding_pipelines#create-a-pipeline-from-the-template)
+// for parameter validation.
+//
+// - I have implemented this for [plant-food-research-open/assemblyqc](https://github.com/Plant-Food-Research-Open/assemblyqc)
+//
+// - I think we should also aspire to support docker, conda and singularity engines
+//
+// - We should follow the nf-core module pattern, e.g. https://github.com/nf-core/modules/blob/master/modules/nf-core/ltrretriever/ltrretriever/main.nf
 /*
 
 if ($maxdiv < 0 or $maxdiv > 100){die "The expected value for the div parameter is 0 - 100!\n"}
@@ -37,6 +47,8 @@ if ($threads !~ /^[0-9]+$/){ die "The expected value for the threads parameter i
 // TODO: Put fffx on bioconda or somewhere so it just runs, otherwise tiny container
 // NEW: Filter out small contigs (1000bp or less, remove)
 // TODO: Make sanitize command do filtering, bbmap is memory hungry!
+// fffx is compiled for Linux x86_64? I'll be developing on macos amd64.
+// We'll have to put the the software in conda/docker containers
 process sanitize {
     tag "${x.baseName}"
     input:
@@ -127,30 +139,44 @@ perl ${projectDir}/util/bed2gff.pl ${genome.baseName}.Helitron.intact.raw.bed HE
 }
 
 // Includes
-include { LTR_HARVEST   } from './subworkflows/local/ltr_harvest'
-include { LTR_FINDER    } from './subworkflows/local/ltr_finder'
-include { LTR_RETRIEVER } from './subworkflows/local/ltr_retriever'
-include { ANNOSINE      } from './subworkflows/local/annosine'
-include { REPEATMODELER } from './subworkflows/local/repeatmodeler'
-include { TIRLEARNER    } from './subworkflows/local/tir_learner'
+include { LTR_HARVEST                   } from './subworkflows/local/ltr_harvest'
+include { LTR_FINDER                    } from './subworkflows/local/ltr_finder'
+include { LTR_RETRIEVER                 } from './subworkflows/local/ltr_retriever'
+include { ANNOSINE                      } from './subworkflows/local/annosine'
+include { REPEATMODELER                 } from './subworkflows/local/repeatmodeler'
+include { TIRLEARNER                    } from './subworkflows/local/tir_learner'
 
-workflow {
-    genomes = channel.fromPath(params.genomes + "/*")
-    sanitize(genomes)
+workflow WORKFLOW_A {
+    // - All nf-core pipelines/modules the [ [`meta`], data] pattern. I think we should follow that
+    // so that our local and nf-core modules are interoperable
+    //
+    // - I am also adding a bit of personal code style, please rever it if you don't like it
+
+    ch_genome                           = Channel.fromPath(params.genomes) // The channel emits a single genome at a time. That's why ch_genome
+    
+    // MODULE: sanitize - All modules and workflow names should follow CAPITAL_SNAKE
+    sanitize ( ch_genome )
  
 
     // Handy for data control
-    genomes_all = sanitize.out.map({ it ->
-        tuple(it[0], ["name": it[0], "assembly": it[1], "translation_table": it[2]], it[1])
-    })
+    ch_genome_all                       = sanitize.out
+                                        | map { id, fasta, table ->
+                                            [
+                                                id,
+                                                [ "name": id, "assembly": fasta, "translation_table": table ],
+                                                fasta
+                                            ]
+                                        }
 
-    genomes_input = sanitize.out.map({ it ->
-        tuple(["name": it[0], "assembly": it[1], "translation_table": it[2]], it[1])
-    })
+    // ch_genomes_input                    = sanitize.out
+    //                                     | map({ it ->
+    //     tuple(["name": it[0], "assembly": it[1], "translation_table": it[2]], it[1])
+    // }) // Smame as ch_genomes_all?
 
-    genomes_files = sanitize.out.map({ it ->
-        tuple(it[0], it[1])
-    })
+    ch_fasta                                = sanitize.out
+                                            | map { id, fasta, table ->
+                                                [ id, fasta ]
+                                            }
     
     // Input for (nearly all) functions are going to be the map "data"
     // Output will be a tuple (data.name, output_file)
@@ -162,14 +188,146 @@ workflow {
     // - translation_table: The translation table for the genome
 
     // These two feed into ltr_retriever (but the first two run in parallel)
-    LTR_HARVEST(genomes_input)
-    LTR_FINDER(genomes_input)
-    LTR_HARVEST.out.join(LTR_FINDER.out).join(genomes_files).set { ltr_retriever_input }
-    LTR_RETRIEVER(ltr_retriever_input)
+    // SUBWORKFLOW: LTR_HARVEST
+    LTR_HARVEST ( ch_genome_all )
+    
+    // SUBWORKFLOW: LTR_FINDER
+    LTR_FINDER ( ch_genome_all )
+    
+    ch_ltr_retriever_input                  = LTR_HARVEST.out
+                                            | join(LTR_FINDER.out)
+                                            | join(ch_fasta)
+    
+    // SUBWORKFLOW: LTR_RETRIEVER
+    LTR_RETRIEVER ( ch_ltr_retriever_input )
 
     // These can also run in parallel
-    ANNOSINE(genomes_input)
-    REPEATMODELER(genomes_input)
-    TIRLEARNER(genomes_input)
+    // SUBWORKFLOW: ANNOSINE
+    ANNOSINE (ch_genome_all )
+    
+    // SUBWORKFLOW: REPEATMODELER
+    REPEATMODELER ( ch_genome_all )
+    
+    // SUBWORKFLOW: TIRLEARNER
+    TIRLEARNER ( ch_genome_all )
     // helitron_scanner(sanitized_genomes)
+}
+
+include { CUSTOM_SHORTENFASTAIDS            } from './modules/pfr/custom/shortenfastaids/main'
+include { LTRHARVEST                        } from './modules/nf-core/ltrharvest/main'
+include { LTRFINDER                         } from './modules/nf-core/ltrfinder/main'
+include { CAT_CAT                           } from './modules/nf-core/cat/cat/main'
+include { LTRRETRIEVER_LTRRETRIEVER         } from './modules/nf-core/ltrretriever/ltrretriever/main'
+include { CUSTOM_RESTOREGFFIDS              } from './modules/pfr/custom/restoregffids/main'
+include { CUSTOM_DUMPSOFTWAREVERSIONS       } from './modules/nf-core/custom/dumpsoftwareversions/main'
+include { GUNZIP                            } from './modules/nf-core/gunzip/main'
+
+workflow WORKFLOW_B {
+    // - Using nf-core styling and modules which support conda, docker and singularity
+    // 
+    // - To test it with docker run: ./main.nf -profile local,docker -resume -c conf/test.config
+    // 
+    // - To test it with conda run: ./main.nf -profile local,conda -resume -c conf/test.config
+    //
+    // - Tools installed by nf-core -v modules install <tool/subtool>
+    //
+    // - stub is also supported
+    // Test: ./main.nf -profile local,docker -resume -stub -c conf/test.config
+
+    // Versions
+    ch_versions                             = Channel.empty()
+    
+    // Input channels
+    ch_fasta_input                          = Channel.fromPath(params.genomes)
+                                            | map { fasta ->
+                                                [ [ id: fasta.simpleName ], fasta ]
+                                            }
+
+    ch_fasta_branch                         = ch_fasta_input
+                                            | branch { meta, fasta ->
+                                                gz: "$fasta".endsWith(".gz")
+                                                rest: ! "$fasta".endsWith(".gz")
+                                            }
+
+    // MODULE: GUNZIP
+    GUNZIP ( ch_fasta_branch.gz )
+
+    ch_fasta                                = GUNZIP.out.gunzip.mix(ch_fasta_branch.rest)
+    ch_versions                             = ch_versions.mix(GUNZIP.out.versions.first())
+
+    // MOUDLE: CUSTOM_SHORTENFASTAIDS
+    CUSTOM_SHORTENFASTAIDS ( ch_fasta )
+
+    ch_short_ids_fasta              = ch_fasta
+                                    | join(CUSTOM_SHORTENFASTAIDS.out.short_ids_fasta, by:0, remainder:true)
+                                    | map { meta, fasta, short_ids_fasta ->
+                                        if ( fasta ) { [ meta, short_ids_fasta ?: fasta ] }
+                                    }
+
+    ch_short_ids_tsv                = CUSTOM_SHORTENFASTAIDS.out.short_ids_tsv
+    ch_versions                     = ch_versions.mix(CUSTOM_SHORTENFASTAIDS.out.versions.first())
+
+    // MODULE: LTRHARVEST
+    LTRHARVEST ( ch_short_ids_fasta )
+
+    ch_ltrharvest_scn               = LTRHARVEST.out.scn
+    ch_versions                     = ch_versions.mix(LTRHARVEST.out.versions.first())
+
+    // MODULE: LTRFINDER
+    LTRFINDER ( ch_short_ids_fasta )
+
+    ch_ltrfinder_scn                = LTRFINDER.out.scn
+    ch_versions                     = ch_versions.mix(LTRFINDER.out.versions.first())
+
+    // MODULE: CAT_CAT
+    ch_cat_cat_inputs               = ch_ltrharvest_scn
+                                    | join(ch_ltrfinder_scn)
+                                    | map { meta, harvested, found -> [ meta, [ harvested, found ] ] }
+
+    CAT_CAT ( ch_cat_cat_inputs )
+
+    ch_ltr_candidates               = CAT_CAT.out.file_out
+    ch_versions                     = ch_versions.mix(CAT_CAT.out.versions.first())
+
+    // MODULE: LTRRETRIEVER_LTRRETRIEVER
+    ch_ltrretriever_inputs          = ch_short_ids_fasta.join(ch_ltr_candidates)
+
+    LTRRETRIEVER_LTRRETRIEVER (
+        ch_ltrretriever_inputs.map { meta, fasta, ltr -> [ meta, fasta ] },
+        ch_ltrretriever_inputs.map { meta, fasta, ltr -> ltr },
+        [],
+        [],
+        []
+    )
+
+    ch_pass_list                    = LTRRETRIEVER_LTRRETRIEVER.out.pass_list
+    ch_ltrlib                       = LTRRETRIEVER_LTRRETRIEVER.out.ltrlib
+    ch_annotation_out               = LTRRETRIEVER_LTRRETRIEVER.out.annotation_out
+    ch_annotation_gff               = LTRRETRIEVER_LTRRETRIEVER.out.annotation_gff
+    ch_versions                     = ch_versions.mix(LTRRETRIEVER_LTRRETRIEVER.out.versions.first())
+
+    // MODULE: CUSTOM_RESTOREGFFIDS
+    ch_restorable_gff_tsv           = ch_annotation_gff.join(ch_short_ids_tsv)
+
+    CUSTOM_RESTOREGFFIDS (
+        ch_restorable_gff_tsv.map { meta, gff, tsv -> [ meta, gff ] },
+        ch_restorable_gff_tsv.map { meta, gff, tsv -> tsv }
+    )
+
+    ch_restored_gff                 = ch_annotation_gff
+                                    | join(CUSTOM_RESTOREGFFIDS.out.restored_ids_gff3, by:0, remainder:true)
+                                    | map { meta, gff, restored_gff -> [ meta, restored_gff ?: gff ] }
+
+    ch_versions                     = ch_versions.mix(CUSTOM_RESTOREGFFIDS.out.versions.first())
+
+
+    // MODULE: CUSTOM_DUMPSOFTWAREVERSIONS
+    CUSTOM_DUMPSOFTWAREVERSIONS (
+        ch_versions.unique().collectFile(name: 'collated_versions.yml')
+    )
+}
+
+workflow {
+    // WORKFLOW_A ( ) // Uncomment to use WORKFLOW_A
+    WORKFLOW_B ( )
 }
