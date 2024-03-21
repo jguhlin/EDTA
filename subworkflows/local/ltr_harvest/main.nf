@@ -7,7 +7,7 @@ process ltr_harvest {
     conda 'bioconda::genometools-genometools'
     cpus 8
     memory 8.GB
-    time '6h'
+    time '2h'
     publishDir 'out_ltr_harvest'
 """
 perl ${projectDir}/bin/LTR_HARVEST_parallel/LTR_HARVEST_parallel \

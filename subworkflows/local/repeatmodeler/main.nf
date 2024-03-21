@@ -5,12 +5,13 @@ process repeatmodeler {
     output:
         tuple val(data), path(assembly), path("${data.name}-families.fa")
     conda 'bioconda::repeatmodeler=2.0.5-0'
-    cpus 16
-    time '6d'
+    cpus 48
+    time '30d'
     memory 16.GB
 
 shell:
 '''
+export BLAST_USAGE_REPORT=false
 BuildDatabase -name !{data.name} !{assembly}
 RepeatModeler -engine ncbi -threads !{task.cpus} -database !{data.name}
 '''

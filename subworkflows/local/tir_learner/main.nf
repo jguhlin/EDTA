@@ -4,10 +4,10 @@ process tir_learner {
         tuple val(data), path(assembly)
     output:
         tuple val(data), path(assembly), path("${data.name}.TIR")
-    cpus 8
-    memory 8.GB
-    time '6h'
-    conda 'python=3.10 bioconda::genometools-genometools bioconda::genericrepeatfinder bioconda::cd-hit bioconda::mdust bioconda::tesorter blast pandas swifter regex scikit-learn tensorflow'
+    cpus 2
+    memory 96.GB
+    time '72h'
+    conda 'python=3.10 bioconda::genometools-genometools bioconda::genericrepeatfinder bioconda::cd-hit blast pandas swifter regex scikit-learn biopython tensorflow'
 
 """
 python3 ${projectDir}/bin/TIR-Learner3.0/TIR-Learner3.0.py \
@@ -27,8 +27,8 @@ process process_output {
         tuple val(data.name), path("${data.name}.TIR.intact.fa"), path("${data.name}.TIR.intact.raw.fa"), path("${data.name}.TIR.intact.raw.gff3")
     cpus 2
     memory 2.GB
-    time '1h'
-    conda 'python=3.10 bioconda::genometools-genometools bioconda::genericrepeatfinder bioconda::cd-hit bioconda::mdust bioconda::tesorter blast pandas regex bioconda::trf'
+    time '24h'
+    conda 'python=3.10 bioconda::mdust bioconda::tesorter bioconda::trf'
     publishDir 'out_tir_learner'
 
 """

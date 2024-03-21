@@ -13,8 +13,8 @@ process ltr_finder {
     output:
         tuple val(data.name), path("${assembly}.finder.combine.scn")
     cpus 4
-    memory 4.GB
-    time '18h'
+    memory 3.GB
+    time '2h'
     publishDir 'out_ltr_finder'
 """
 perl ${projectDir}/bin/LTR_FINDER_parallel/LTR_FINDER_parallel \

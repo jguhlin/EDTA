@@ -5,9 +5,9 @@ process annosine {
     output:
         tuple val(data), path(assembly), path("Seed_SINE.fa"), optional: true
     conda 'bioconda::annosine2'
-    cpus 4
-    memory 8.GB
-    time '4h'
+    cpus 8
+    memory 12.GB
+    time '12h'
 
 shell:
 '''
