@@ -16,14 +16,12 @@ concurrency:
 
 jobs:
   test:
-    name: Run pipeline with test data
+    name: Stub test pipeline
     runs-on: ubuntu-latest
     strategy:
       matrix:
         NXF_VER:
           - "23.04.0"
-        RUN_CONFIG:
-          - "-profile local,docker -stub -c ./tests/stub/stub.config --max_cpus 2 --max_memory '6.GB' --max_time '1.h'"
     steps:
       - name: Check out pipeline code
         uses: actions/checkout@v4
@@ -33,6 +31,10 @@ jobs:
         with:
           version: ${{ matrix.NXF_VER }}
 
-      - name: Run pipeline with test data
+      - name: Stub test pipeline
         run: |
-          nextflow run ${GITHUB_WORKSPACE} --outdir ./results ${{ matrix.RUN_CONFIG }}
+          nextflow run ${GITHUB_WORKSPACE} \
+          -profile local,docker \
+          -stub \
+          -c conf/test.config \
+          --max_cpus 2 --max_memory '6.GB' --max_time '1.h'
