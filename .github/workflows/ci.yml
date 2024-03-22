@@ -1,0 +1,40 @@
+name: Linux/Docker -stub test
+on:
+  push:
+    branches:
+      - nextflow
+  pull_request:
+    branches:
+      - nextflow
+
+env:
+  NXF_ANSI_LOG: false
+
+concurrency:
+  group: "${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}"
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Stub test pipeline
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        NXF_VER:
+          - "23.04.0"
+    steps:
+      - name: Check out pipeline code
+        uses: actions/checkout@v4
+
+      - name: Install Nextflow
+        uses: nf-core/setup-nextflow@v1
+        with:
+          version: ${{ matrix.NXF_VER }}
+
+      - name: Stub test pipeline
+        run: |
+          nextflow run ${GITHUB_WORKSPACE} \
+          -profile local,docker \
+          -stub \
+          -c conf/test.config \
+          --max_cpus 2 --max_memory '6.GB' --max_time '1.h'
