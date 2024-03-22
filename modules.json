@@ -1,58 +1,75 @@
 {
-  "name": "",
-  "homePage": "",
-  "repos": {
-    "git@github.com:PlantandFoodResearch/nxf-modules.git": {
-      "modules": {
-        "pfr": {
-          "custom/restoregffids": {
-            "branch": "main",
-            "git_sha": "e9f6bdd634bdbcd52c5568ba82f16176ec06631f",
-            "installed_by": ["modules"]
-          },
-          "custom/shortenfastaids": {
-            "branch": "main",
-            "git_sha": "5e0e41b51d7fc7f68ae43692b6fe19b95d7f3a8c",
-            "installed_by": ["modules"]
-          }
+    "name": "",
+    "homePage": "",
+    "repos": {
+        "git@github.com:PlantandFoodResearch/nxf-modules.git": {
+            "modules": {
+                "pfr": {
+                    "custom/restoregffids": {
+                        "branch": "main",
+                        "git_sha": "e9f6bdd634bdbcd52c5568ba82f16176ec06631f",
+                        "installed_by": [
+                            "modules"
+                        ]
+                    },
+                    "custom/shortenfastaids": {
+                        "branch": "main",
+                        "git_sha": "5e0e41b51d7fc7f68ae43692b6fe19b95d7f3a8c",
+                        "installed_by": [
+                            "modules"
+                        ]
+                    }
+                }
+            }
+        },
+        "https://github.com/nf-core/modules.git": {
+            "modules": {
+                "nf-core": {
+                    "cat/cat": {
+                        "branch": "master",
+                        "git_sha": "9437e6053dccf4aafa022bfd6e7e9de67e625af8",
+                        "installed_by": [
+                            "modules"
+                        ]
+                    },
+                    "custom/dumpsoftwareversions": {
+                        "branch": "master",
+                        "git_sha": "de45447d060b8c8b98575bc637a4a575fd0638e1",
+                        "installed_by": [
+                            "modules"
+                        ]
+                    },
+                    "gunzip": {
+                        "branch": "master",
+                        "git_sha": "3a5fef109d113b4997c9822198664ca5f2716208",
+                        "installed_by": [
+                            "modules"
+                        ]
+                    },
+                    "ltrfinder": {
+                        "branch": "master",
+                        "git_sha": "85b12bcdd6a5fee149fe3d5e8262c05123e8eab7",
+                        "installed_by": [
+                            "modules"
+                        ]
+                    },
+                    "ltrharvest": {
+                        "branch": "master",
+                        "git_sha": "e12e44e962ebbf20b49de0c71f21111ad2e64da3",
+                        "installed_by": [
+                            "modules"
+                        ]
+                    },
+                    "ltrretriever/ltrretriever": {
+                        "branch": "master",
+                        "git_sha": "0aef23e5aa5141aafea3b1e47c57ef7594644787",
+                        "installed_by": [
+                            "modules"
+                        ],
+                        "patch": "modules/nf-core/ltrretriever/ltrretriever/ltrretriever-ltrretriever.diff"
+                    }
+                }
+            }
         }
-      }
-    },
-    "https://github.com/nf-core/modules.git": {
-      "modules": {
-        "nf-core": {
-          "cat/cat": {
-            "branch": "master",
-            "git_sha": "9437e6053dccf4aafa022bfd6e7e9de67e625af8",
-            "installed_by": ["modules"]
-          },
-          "custom/dumpsoftwareversions": {
-            "branch": "master",
-            "git_sha": "de45447d060b8c8b98575bc637a4a575fd0638e1",
-            "installed_by": ["modules"]
-          },
-          "gunzip": {
-            "branch": "master",
-            "git_sha": "3a5fef109d113b4997c9822198664ca5f2716208",
-            "installed_by": ["modules"]
-          },
-          "ltrfinder": {
-            "branch": "master",
-            "git_sha": "85b12bcdd6a5fee149fe3d5e8262c05123e8eab7",
-            "installed_by": ["modules"]
-          },
-          "ltrharvest": {
-            "branch": "master",
-            "git_sha": "e12e44e962ebbf20b49de0c71f21111ad2e64da3",
-            "installed_by": ["modules"]
-          },
-          "ltrretriever/ltrretriever": {
-            "branch": "master",
-            "git_sha": "0aef23e5aa5141aafea3b1e47c57ef7594644787",
-            "installed_by": ["modules"]
-          }
-        }
-      }
     }
-  }
 }
