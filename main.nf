@@ -213,6 +213,9 @@ workflow WORKFLOW_A {
     // helitron_scanner(sanitized_genomes)
 }
 
+// Functions
+include { idFromFileName                    } from './modules/local/utils'
+
 // MODULES
 include { GUNZIP                            } from './modules/nf-core/gunzip/main'
 include { CUSTOM_SHORTENFASTAIDS            } from './modules/pfr/custom/shortenfastaids/main'
@@ -220,6 +223,7 @@ include { CUSTOM_DUMPSOFTWAREVERSIONS       } from './modules/nf-core/custom/dum
 
 // SUBWORKFLOWS
 include { FASTA_LTRRETRIEVER                } from './subworkflows/local/fasta_ltrretriever'
+include { FASTA_REPEATMODELER               } from './subworkflows/local/fasta_repeatmodeler'
 
 workflow WORKFLOW_B {
     // - Using nf-core styling and modules which support conda, docker and singularity
@@ -239,7 +243,7 @@ workflow WORKFLOW_B {
     // Input channels
     ch_fasta_input                          = Channel.fromPath(params.genomes)
                                             | map { fasta ->
-                                                [ [ id: fasta.simpleName ], fasta ]
+                                                [ [ id: idFromFileName(fasta.baseName) ], fasta ]
                                             }
 
     ch_fasta_branch                         = ch_fasta_input
@@ -270,6 +274,11 @@ workflow WORKFLOW_B {
     FASTA_LTRRETRIEVER ( ch_short_ids_fasta, ch_short_ids_tsv )
 
     ch_versions                             = ch_versions.mix(FASTA_LTRRETRIEVER.out.versions)
+
+    // SUBWORKFLOW: FASTA_REPEATMODELER
+    FASTA_REPEATMODELER ( ch_short_ids_fasta )
+
+    ch_versions                             = ch_versions.mix(FASTA_REPEATMODELER.out.versions)
 
 
     // MODULE: CUSTOM_DUMPSOFTWAREVERSIONS

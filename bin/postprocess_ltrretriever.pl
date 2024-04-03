@@ -26,7 +26,7 @@ my $filter_gff = "$bin_path/filter_gff3.pl";
 # Changes
 # - Removed multiline backticks
 # - Commented out cp $genome.LTR.intact.raw.fa.anno.list ../
-# - COmmented out `rm $genome`
+# - Commented out `rm $genome`
 
 
 # get full-length LTR from pass.list

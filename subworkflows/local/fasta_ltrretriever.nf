@@ -8,7 +8,7 @@ include { POSTPROCESS_LTRRETRIEVER  } from '../../modules/local/postprocess_ltrr
 workflow FASTA_LTRRETRIEVER {
     
     take:
-    ch_short_ids_fasta              // Channel: [ meta, fasta ]
+    ch_short_ids_fasta              // Channel: [ meta, fasta ]; meta -> [ val(id) ]
     ch_short_ids_tsv                // Channel: [ meta, tsv ]
 
     main:

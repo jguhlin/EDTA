@@ -18,6 +18,20 @@
                         "installed_by": [
                             "modules"
                         ]
+                    },
+                    "repeatmodeler/builddatabase": {
+                        "branch": "main",
+                        "git_sha": "274eac7a8cc66f1b68546cdadb185f4fce80e6c4",
+                        "installed_by": [
+                            "modules"
+                        ]
+                    },
+                    "repeatmodeler/repeatmodeler": {
+                        "branch": "main",
+                        "git_sha": "274eac7a8cc66f1b68546cdadb185f4fce80e6c4",
+                        "installed_by": [
+                            "modules"
+                        ]
                     }
                 }
             }
