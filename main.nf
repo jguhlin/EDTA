@@ -224,6 +224,7 @@ include { CUSTOM_DUMPSOFTWAREVERSIONS       } from './modules/nf-core/custom/dum
 // SUBWORKFLOWS
 include { FASTA_LTRRETRIEVER                } from './subworkflows/local/fasta_ltrretriever'
 include { FASTA_REPEATMODELER               } from './subworkflows/local/fasta_repeatmodeler'
+include { FASTA_ANNOSINE                    } from './subworkflows/local/fasta_annosine'
 
 workflow WORKFLOW_B {
     // - Using nf-core styling and modules which support conda, docker and singularity
@@ -280,6 +281,10 @@ workflow WORKFLOW_B {
 
     ch_versions                             = ch_versions.mix(FASTA_REPEATMODELER.out.versions)
 
+    // SUBWORKFLOW: FASTA_ANNOSINE
+    FASTA_ANNOSINE ( ch_short_ids_fasta )
+
+    ch_versions                             = ch_versions.mix(FASTA_ANNOSINE.out.versions)
 
     // MODULE: CUSTOM_DUMPSOFTWAREVERSIONS
     CUSTOM_DUMPSOFTWAREVERSIONS (
