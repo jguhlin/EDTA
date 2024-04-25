@@ -1,0 +1,49 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/nf-core/modules/master/modules/meta-schema.json
+name: "tirlearner"
+description: |
+  Ensemble Method for TIR Transposable Element Annotation
+keywords:
+  - genomics
+  - annotation
+  - repeat
+tools:
+  - "LTR_FINDER_parallel":
+      description: A Perl wrapper for LTR_FINDER
+      homepage: "https://github.com/lutianyu2001/TIR-Learner"
+      documentation: "https://github.com/lutianyu2001/TIR-Learner"
+      tool_dev_url: "https://github.com/lutianyu2001/TIR-Learner"
+      doi: "10.1186/s13100-019-0193-0"
+      licence: ["GPLV3"]
+input:
+  - meta:
+      type: map
+      description: |
+        Groovy Map containing sample information
+        e.g. `[ id:'sample1' ]`
+  - fasta:
+      type: file
+      description: Genome sequences in fasta format
+      pattern: "*.{fsa,fa,fasta}"
+output:
+  - meta:
+      type: map
+      description: |
+        Groovy Map containing sample information
+        e.g. `[ id:'sample1' ]`
+  - scn:
+      type: file
+      description: Annotation in LTRharvest or LTR_FINDER format
+      pattern: "*.scn"
+  - gff:
+      type: file
+      description: Annotation in gff3 format
+      pattern: "*.gff3"
+  - versions:
+      type: file
+      description: File containing software versions
+      pattern: "versions.yml"
+authors:
+  - "@GallVp"
+maintainers:
+  - "@GallVp"
