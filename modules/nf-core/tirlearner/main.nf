@@ -11,7 +11,7 @@ process TIRLEARNER {
     tuple val(meta), path(fasta)
 
     output:
-    tuple val(meta), path("*.scn")      , emit: scn
+    tuple val(meta), path("*.fa")       , emit: fasta
     tuple val(meta), path("*.gff3")     , emit: gff
     path "versions.yml"                 , emit: versions
 
@@ -29,15 +29,15 @@ process TIRLEARNER {
         -s ${species} \
         -t ${task.cpus} \
         -l ${maxint} \
-        -o ${prefix}.TIR
+        -o ${prefix}.TIR \
+        ${args}
 
-    mv "${fasta}.finder.combine.scn"    "${prefix}.scn"
-    mv "${fasta}.finder.combine.gff3"   "${prefix}.gff3"
+    mv "${prefix}.TIR/TIR-Learner-Result/TIR-Learner_FinalAnn_filter.fa"    "${prefix}.fa"
+    mv "${prefix}.TIR/TIR-Learner-Result/TIR-Learner_FinalAnn_filter.gff3"  "${prefix}.gff3"
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        LTR_FINDER_parallel: \$(LTR_FINDER_parallel -h | grep 'Version:' | sed 's/Version: //')
-        ltr_finder: \$(ltr_finder -h 2>&1 | grep 'ltr_finder' | sed 's/ltr_finder //')
+        TIR-Learner: \$(TIR-Learner -v | head -n 1 | sed 's/TIR-Learner //')
     END_VERSIONS
     """
 
@@ -45,13 +45,12 @@ process TIRLEARNER {
     def args            = task.ext.args ?: ''
     def prefix          = task.ext.prefix ?: "${meta.id}"
     """
-    touch "${prefix}.scn"
+    touch "${prefix}.fa"
     touch "${prefix}.gff3"
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        LTR_FINDER_parallel: \$(LTR_FINDER_parallel -h | grep 'Version:' | sed 's/Version: //')
-        ltr_finder: \$(ltr_finder -h 2>&1 | grep 'ltr_finder' | sed 's/ltr_finder //')
+        TIR-Learner: \$(TIR-Learner -v | head -n 1 | sed 's/TIR-Learner //')
     END_VERSIONS
     """
 }

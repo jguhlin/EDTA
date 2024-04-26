@@ -8,13 +8,13 @@ keywords:
   - annotation
   - repeat
 tools:
-  - "LTR_FINDER_parallel":
-      description: A Perl wrapper for LTR_FINDER
+  - "TIR-Learner":
+      description: TIR-Learner
       homepage: "https://github.com/lutianyu2001/TIR-Learner"
       documentation: "https://github.com/lutianyu2001/TIR-Learner"
       tool_dev_url: "https://github.com/lutianyu2001/TIR-Learner"
       doi: "10.1186/s13100-019-0193-0"
-      licence: ["GPLV3"]
+      licence: ["GPLv3"]
 input:
   - meta:
       type: map
