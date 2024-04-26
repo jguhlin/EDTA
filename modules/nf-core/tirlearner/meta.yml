@@ -33,12 +33,12 @@ output:
         e.g. `[ id:'sample1' ]`
   - scn:
       type: file
-      description: Annotation in LTRharvest or LTR_FINDER format
-      pattern: "*.scn"
+      description: Putative TIRs in GFF3
+      pattern: "*.gff3"
   - gff:
       type: file
-      description: Annotation in gff3 format
-      pattern: "*.gff3"
+      description: Putative TIRs in Fasta format
+      pattern: "*.fa"
   - versions:
       type: file
       description: File containing software versions
