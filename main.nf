@@ -213,14 +213,18 @@ workflow WORKFLOW_A {
     // helitron_scanner(sanitized_genomes)
 }
 
-include { CUSTOM_SHORTENFASTAIDS            } from './modules/pfr/custom/shortenfastaids/main'
-include { LTRHARVEST                        } from './modules/nf-core/ltrharvest/main'
-include { LTRFINDER                         } from './modules/nf-core/ltrfinder/main'
-include { CAT_CAT                           } from './modules/nf-core/cat/cat/main'
-include { LTRRETRIEVER_LTRRETRIEVER         } from './modules/nf-core/ltrretriever/ltrretriever/main'
-include { CUSTOM_RESTOREGFFIDS              } from './modules/pfr/custom/restoregffids/main'
-include { CUSTOM_DUMPSOFTWAREVERSIONS       } from './modules/nf-core/custom/dumpsoftwareversions/main'
+// Functions
+include { idFromFileName                    } from './modules/local/utils'
+
+// MODULES
 include { GUNZIP                            } from './modules/nf-core/gunzip/main'
+include { CUSTOM_SHORTENFASTAIDS            } from './modules/pfr/custom/shortenfastaids/main'
+include { CUSTOM_DUMPSOFTWAREVERSIONS       } from './modules/nf-core/custom/dumpsoftwareversions/main'
+
+// SUBWORKFLOWS
+include { FASTA_LTRRETRIEVER                } from './subworkflows/local/fasta_ltrretriever'
+include { FASTA_REPEATMODELER               } from './subworkflows/local/fasta_repeatmodeler'
+include { FASTA_ANNOSINE                    } from './subworkflows/local/fasta_annosine'
 
 workflow WORKFLOW_B {
     // - Using nf-core styling and modules which support conda, docker and singularity
@@ -240,7 +244,7 @@ workflow WORKFLOW_B {
     // Input channels
     ch_fasta_input                          = Channel.fromPath(params.genomes)
                                             | map { fasta ->
-                                                [ [ id: fasta.simpleName ], fasta ]
+                                                [ [ id: idFromFileName(fasta.baseName) ], fasta ]
                                             }
 
     ch_fasta_branch                         = ch_fasta_input
@@ -258,68 +262,29 @@ workflow WORKFLOW_B {
     // MOUDLE: CUSTOM_SHORTENFASTAIDS
     CUSTOM_SHORTENFASTAIDS ( ch_fasta )
 
-    ch_short_ids_fasta              = ch_fasta
-                                    | join(CUSTOM_SHORTENFASTAIDS.out.short_ids_fasta, by:0, remainder:true)
-                                    | map { meta, fasta, short_ids_fasta ->
-                                        if ( fasta ) { [ meta, short_ids_fasta ?: fasta ] }
-                                    }
+    ch_short_ids_fasta                      = ch_fasta
+                                            | join(CUSTOM_SHORTENFASTAIDS.out.short_ids_fasta, by:0, remainder:true)
+                                            | map { meta, fasta, short_ids_fasta ->
+                                                if ( fasta ) { [ meta, short_ids_fasta ?: fasta ] }
+                                            }
 
-    ch_short_ids_tsv                = CUSTOM_SHORTENFASTAIDS.out.short_ids_tsv
-    ch_versions                     = ch_versions.mix(CUSTOM_SHORTENFASTAIDS.out.versions.first())
+    ch_short_ids_tsv                        = CUSTOM_SHORTENFASTAIDS.out.short_ids_tsv
+    ch_versions                             = ch_versions.mix(CUSTOM_SHORTENFASTAIDS.out.versions.first())
 
-    // MODULE: LTRHARVEST
-    LTRHARVEST ( ch_short_ids_fasta )
+    // SUBWORKFLOW: FASTA_LTRRETRIEVER
+    FASTA_LTRRETRIEVER ( ch_short_ids_fasta, ch_short_ids_tsv )
 
-    ch_ltrharvest_scn               = LTRHARVEST.out.scn
-    ch_versions                     = ch_versions.mix(LTRHARVEST.out.versions.first())
+    ch_versions                             = ch_versions.mix(FASTA_LTRRETRIEVER.out.versions)
 
-    // MODULE: LTRFINDER
-    LTRFINDER ( ch_short_ids_fasta )
+    // SUBWORKFLOW: FASTA_REPEATMODELER
+    FASTA_REPEATMODELER ( ch_short_ids_fasta )
 
-    ch_ltrfinder_scn                = LTRFINDER.out.scn
-    ch_versions                     = ch_versions.mix(LTRFINDER.out.versions.first())
+    ch_versions                             = ch_versions.mix(FASTA_REPEATMODELER.out.versions)
 
-    // MODULE: CAT_CAT
-    ch_cat_cat_inputs               = ch_ltrharvest_scn
-                                    | join(ch_ltrfinder_scn)
-                                    | map { meta, harvested, found -> [ meta, [ harvested, found ] ] }
+    // SUBWORKFLOW: FASTA_ANNOSINE
+    FASTA_ANNOSINE ( ch_short_ids_fasta )
 
-    CAT_CAT ( ch_cat_cat_inputs )
-
-    ch_ltr_candidates               = CAT_CAT.out.file_out
-    ch_versions                     = ch_versions.mix(CAT_CAT.out.versions.first())
-
-    // MODULE: LTRRETRIEVER_LTRRETRIEVER
-    ch_ltrretriever_inputs          = ch_short_ids_fasta.join(ch_ltr_candidates)
-
-    LTRRETRIEVER_LTRRETRIEVER (
-        ch_ltrretriever_inputs.map { meta, fasta, ltr -> [ meta, fasta ] },
-        ch_ltrretriever_inputs.map { meta, fasta, ltr -> ltr },
-        [],
-        [],
-        []
-    )
-
-    ch_pass_list                    = LTRRETRIEVER_LTRRETRIEVER.out.pass_list
-    ch_ltrlib                       = LTRRETRIEVER_LTRRETRIEVER.out.ltrlib
-    ch_annotation_out               = LTRRETRIEVER_LTRRETRIEVER.out.annotation_out
-    ch_annotation_gff               = LTRRETRIEVER_LTRRETRIEVER.out.annotation_gff
-    ch_versions                     = ch_versions.mix(LTRRETRIEVER_LTRRETRIEVER.out.versions.first())
-
-    // MODULE: CUSTOM_RESTOREGFFIDS
-    ch_restorable_gff_tsv           = ch_annotation_gff.join(ch_short_ids_tsv)
-
-    CUSTOM_RESTOREGFFIDS (
-        ch_restorable_gff_tsv.map { meta, gff, tsv -> [ meta, gff ] },
-        ch_restorable_gff_tsv.map { meta, gff, tsv -> tsv }
-    )
-
-    ch_restored_gff                 = ch_annotation_gff
-                                    | join(CUSTOM_RESTOREGFFIDS.out.restored_ids_gff3, by:0, remainder:true)
-                                    | map { meta, gff, restored_gff -> [ meta, restored_gff ?: gff ] }
-
-    ch_versions                     = ch_versions.mix(CUSTOM_RESTOREGFFIDS.out.versions.first())
-
+    ch_versions                             = ch_versions.mix(FASTA_ANNOSINE.out.versions)
 
     // MODULE: CUSTOM_DUMPSOFTWAREVERSIONS
     CUSTOM_DUMPSOFTWAREVERSIONS (

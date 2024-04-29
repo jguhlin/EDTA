@@ -19,6 +19,7 @@ process LTRRETRIEVER_LTRRETRIEVER {
     tuple val(meta), path("${prefix}.pass.list"), emit: pass_list
     tuple val(meta), path("*.pass.list.gff3")   , emit: pass_list_gff
     tuple val(meta), path("*.LTRlib.fa")        , emit: ltrlib
+    tuple val(meta), path("*.defalse")          , emit: defalse
     tuple val(meta), path("${prefix}.out")      , emit: annotation_out  , optional: true
     tuple val(meta), path("*.out.gff3")         , emit: annotation_gff  , optional: true
     path "versions.yml"                         , emit: versions
@@ -47,6 +48,7 @@ process LTRRETRIEVER_LTRRETRIEVER {
     mv "${genome}.pass.list"        "${prefix}.pass.list"
     mv "${genome}.pass.list.gff3"   "${prefix}.pass.list.gff3"
     mv "${genome}.LTRlib.fa"        "${prefix}.LTRlib.fa"
+    mv "${genome}.defalse"          "${prefix}.defalse"
     mv "${genome}.out"              "${prefix}.out"             || echo ".out was not produced"
     mv "${genome}.out.gff3"         "${prefix}.out.gff3"        || echo ".out.gff3 was not produced"
 
@@ -66,6 +68,7 @@ process LTRRETRIEVER_LTRRETRIEVER {
     touch "${prefix}.pass.list"
     touch "${prefix}.pass.list.gff3"
     touch "${prefix}.LTRlib.fa"
+    touch "${prefix}.defalse"
     $touch_out
     $touch_out_gff
 

@@ -64,6 +64,10 @@ output:
       type: file
       description: All non-redundant LTR-RTs
       pattern: "*.LTRlib.fa"
+  - defalse:
+      type: file
+      description: defalse file
+      pattern: "*.defalse"
   - annotation_out:
       type: file
       description: Whole-genome LTR-RT annotation by the non-redundant library

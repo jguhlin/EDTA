@@ -2,6 +2,22 @@
   "name": "",
   "homePage": "",
   "repos": {
+    "git@github.com:GallVp/edta-components.git": {
+      "modules": {
+        "edta-components": {
+          "annosine": {
+            "branch": "main",
+            "git_sha": "b6c4c9ff6bba7c62224bed179c702b192fb94fb7",
+            "installed_by": ["modules"]
+          },
+          "tesorter": {
+            "branch": "main",
+            "git_sha": "2ec5e9237e4709d71015e442627146d3c04e7abc",
+            "installed_by": ["modules"]
+          }
+        }
+      }
+    },
     "git@github.com:PlantandFoodResearch/nxf-modules.git": {
       "modules": {
         "pfr": {
@@ -13,6 +29,16 @@
           "custom/shortenfastaids": {
             "branch": "main",
             "git_sha": "5e0e41b51d7fc7f68ae43692b6fe19b95d7f3a8c",
+            "installed_by": ["modules"]
+          },
+          "repeatmodeler/builddatabase": {
+            "branch": "main",
+            "git_sha": "274eac7a8cc66f1b68546cdadb185f4fce80e6c4",
+            "installed_by": ["modules"]
+          },
+          "repeatmodeler/repeatmodeler": {
+            "branch": "main",
+            "git_sha": "274eac7a8cc66f1b68546cdadb185f4fce80e6c4",
             "installed_by": ["modules"]
           }
         }
@@ -49,7 +75,8 @@
           "ltrretriever/ltrretriever": {
             "branch": "master",
             "git_sha": "0aef23e5aa5141aafea3b1e47c57ef7594644787",
-            "installed_by": ["modules"]
+            "installed_by": ["modules"],
+            "patch": "modules/nf-core/ltrretriever/ltrretriever/ltrretriever-ltrretriever.diff"
           }
         }
       }
