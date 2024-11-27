@@ -3,6 +3,5 @@ bin/TIR-Learner*/Module3/Maize_model.sav
 work/
 .nextflow.log*
 .nextflow/*
-.nf-test
-/tests/
-.nf-test.log
+results/
+.nf-test*
